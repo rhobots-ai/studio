@@ -1,0 +1,17 @@
+{
+  "total_rows": 1000,
+  "columns": [
+    "instruction",
+    "input",
+    "output"
+  ],
+  "null_counts": {},
+  "sample_data": [
+    {
+      "instruction": "What is machine learning?",
+      "input": "",
+      "output": "Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed."
+    }
+  ],
+  "file_type": "JSON"
+}

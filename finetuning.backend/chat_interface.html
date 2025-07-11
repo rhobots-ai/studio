@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fine-tuned Model Chat Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .model-status {
+            font-size: 14px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+
+        .status-indicator.loaded {
+            background: #2ed573;
+        }
+
+        .model-controls {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .model-select {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a6fd8;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 14px;
+        }
+
+        .message.user .message-avatar {
+            background: #667eea;
+        }
+
+        .message.assistant .message-avatar {
+            background: #764ba2;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 16px;
+            resize: none;
+            min-height: 44px;
+            max-height: 120px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .send-btn:hover:not(:disabled) {
+            background: #5a6fd8;
+            transform: scale(1.05);
+        }
+
+        .send-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .settings-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            display: none;
+        }
+
+        .settings-panel.show {
+            display: block;
+        }
+
+        .settings-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .settings-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .settings-label {
+            min-width: 120px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .settings-input {
+            flex: 1;
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .loading-dots {
+            display: inline-block;
+        }
+
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            80%, 100% { content: '...'; }
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border: 1px solid #c3e6cb;
+        }
+
+        .settings-toggle {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .settings-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .model-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .model-select {
+                min-width: auto;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <h1>🤖 Fine-tuned Model Chat</h1>
+            <div class="model-status">
+                <span class="status-indicator" id="statusIndicator"></span>
+                <span id="statusText">No model loaded</span>
+            </div>
+            <button class="settings-toggle" onclick="toggleSettings()">⚙️</button>
+        </div>
+
+        <div class="settings-panel" id="settingsPanel">
+            <div class="settings-row">
+                <label class="settings-label">Max Tokens:</label>
+                <input type="number" class="settings-input" id="maxTokens" value="150" min="10" max="1000">
+            </div>
+            <div class="settings-row">
+                <label class="settings-label">Temperature:</label>
+                <input type="number" class="settings-input" id="temperature" value="0.7" min="0" max="2" step="0.1">
+            </div>
+        </div>
+
+        <div class="model-controls">
+            <select class="model-select" id="modelSelect">
+                <option value="">Select a model...</option>
+            </select>
+            <button class="btn btn-primary" onclick="loadSelectedModel()" id="loadBtn">Load Model</button>
+            <button class="btn btn-secondary" onclick="unloadModel()" id="unloadBtn" disabled>Unload</button>
+            <button class="btn btn-secondary" onclick="refreshModels()">Refresh</button>
+            <button class="btn btn-secondary" onclick="clearChat()">Clear Chat</button>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+                <div class="message-avatar">AI</div>
+                <div class="message-content">
+                    Welcome! Please load a fine-tuned model to start chatting. You can select from available models above.
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <textarea 
+                    class="chat-input" 
+                    id="chatInput" 
+                    placeholder="Type your message here..." 
+                    rows="1"
+                    onkeydown="handleKeyDown(event)"
+                ></textarea>
+                <button class="send-btn" onclick="sendMessage()" id="sendBtn" disabled>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://finetune_engine.deepcite.in';
+        let currentModel = null;
+        let isLoading = false;
+
+        // Initialize the interface
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshModels();
+            checkModelStatus();
+            
+            // Auto-resize textarea
+            const chatInput = document.getElementById('chatInput');
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+        });
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('show');
+        }
+
+        async function refreshModels() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/models/available`);
+                const data = await response.json();
+                
+                const select = document.getElementById('modelSelect');
+                select.innerHTML = '<option value="">Select a model...</option>';
+                
+                if (data.models && data.models.length > 0) {
+                    data.models.forEach(model => {
+                        const option = document.createElement('option');
+                        option.value = model.path;
+                        option.textContent = `${model.name} (${model.size_mb} MB)`;
+                        select.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No models available';
+                    option.disabled = true;
+                    select.appendChild(option);
+                }
+            } catch (error) {
+                showError('Failed to load available models: ' + error.message);
+            }
+        }
+
+        async function checkModelStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/models/status`);
+                const data = await response.json();
+                
+                updateModelStatus(data.loaded, data.model_path);
+            } catch (error) {
+                console.error('Failed to check model status:', error);
+            }
+        }
+
+        function updateModelStatus(loaded, modelPath = null) {
+            const indicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            const loadBtn = document.getElementById('loadBtn');
+            const unloadBtn = document.getElementById('unloadBtn');
+            const sendBtn = document.getElementById('sendBtn');
+            
+            if (loaded && modelPath) {
+                indicator.classList.add('loaded');
+                statusText.textContent = `Model loaded: ${modelPath.split('/').pop()}`;
+                loadBtn.disabled = true;
+                unloadBtn.disabled = false;
+                sendBtn.disabled = false;
+                currentModel = modelPath;
+            } else {
+                indicator.classList.remove('loaded');
+                statusText.textContent = 'No model loaded';
+                loadBtn.disabled = false;
+                unloadBtn.disabled = true;
+                sendBtn.disabled = true;
+                currentModel = null;
+            }
+        }
+
+        async function loadSelectedModel() {
+            const select = document.getElementById('modelSelect');
+            const modelPath = select.value;
+            
+            if (!modelPath) {
+                showError('Please select a model to load');
+                return;
+            }
+
+            const loadBtn = document.getElementById('loadBtn');
+            loadBtn.disabled = true;
+            loadBtn.textContent = 'Loading...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/models/load`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model_path: modelPath,
+                        max_seq_length: 2048
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('Model loaded successfully!');
+                    updateModelStatus(true, modelPath);
+                    addMessage('assistant', 'Model loaded! I\'m ready to chat. How can I help you?');
+                } else {
+                    showError('Failed to load model: ' + data.detail);
+                    updateModelStatus(false);
+                }
+            } catch (error) {
+                showError('Error loading model: ' + error.message);
+                updateModelStatus(false);
+            } finally {
+                loadBtn.disabled = false;
+                loadBtn.textContent = 'Load Model';
+            }
+        }
+
+        async function unloadModel() {
+            const unloadBtn = document.getElementById('unloadBtn');
+            unloadBtn.disabled = true;
+            unloadBtn.textContent = 'Unloading...';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/models/unload`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showSuccess('Model unloaded successfully!');
+                    updateModelStatus(false);
+                    addMessage('assistant', 'Model has been unloaded. Please load a model to continue chatting.');
+                } else {
+                    showError('Failed to unload model: ' + data.detail);
+                }
+            } catch (error) {
+                showError('Error unloading model: ' + error.message);
+            } finally {
+                unloadBtn.disabled = false;
+                unloadBtn.textContent = 'Unload';
+            }
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message || isLoading || !currentModel) {
+                return;
+            }
+
+            // Add user message to chat
+            addMessage('user', message);
+            input.value = '';
+            input.style.height = 'auto';
+
+            // Create streaming message
+            const streamingId = addStreamingMessage('assistant');
+            isLoading = true;
+            updateSendButton();
+
+            try {
+                const maxTokens = parseInt(document.getElementById('maxTokens').value) || 150;
+                const temperature = parseFloat(document.getElementById('temperature').value) || 0.7;
+
+                // Use streaming endpoint
+                const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        max_tokens: maxTokens,
+                        temperature: temperature
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Read the streaming response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // Keep incomplete line in buffer
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data.trim()) {
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    if (parsed.status === 'streaming' && parsed.token) {
+                                        appendToStreamingMessage(streamingId, parsed.token);
+                                    } else if (parsed.status === 'completed') {
+                                        finalizeStreamingMessage(streamingId);
+                                        break;
+                                    } else if (parsed.status === 'error') {
+                                        updateStreamingMessage(streamingId, `Error: ${parsed.message}`);
+                                        showError('Failed to get response: ' + parsed.message);
+                                        break;
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing streaming data:', e);
+                                }
+                            }
+                        }
+                    }
+                }
+
+            } catch (error) {
+                updateStreamingMessage(streamingId, 'Sorry, I encountered an error while processing your message.');
+                showError('Error sending message: ' + error.message);
+            } finally {
+                isLoading = false;
+                updateSendButton();
+            }
+        }
+
+        function addMessage(role, content, isLoading = false) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.id = messageId;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = role === 'user' ? 'You' : 'AI';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            
+            if (isLoading) {
+                contentDiv.innerHTML = '<div class="loading">Thinking<span class="loading-dots"></span></div>';
+            } else {
+                contentDiv.textContent = content;
+            }
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return messageId;
+        }
+
+        function removeMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                message.remove();
+            }
+        }
+
+        function updateSendButton() {
+            const sendBtn = document.getElementById('sendBtn');
+            sendBtn.disabled = isLoading || !currentModel;
+        }
+
+        function clearChat() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.innerHTML = `
+                <div class="message assistant">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        Chat cleared! How can I help you?
+                    </div>
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            
+            const container = document.querySelector('.model-controls');
+            container.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            
+            const container = document.querySelector('.model-controls');
+            container.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+
+        // Streaming message functions
+        function addStreamingMessage(role) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageId = 'msg_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+            messageDiv.id = messageId;
+            
+            const avatar = document.createElement('div');
+            avatar.className = 'message-avatar';
+            avatar.textContent = role === 'user' ? 'You' : 'AI';
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = '';
+            contentDiv.dataset.streaming = 'true';
+            
+            messageDiv.appendChild(avatar);
+            messageDiv.appendChild(contentDiv);
+            messagesContainer.appendChild(messageDiv);
+            
+            // Scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            return messageId;
+        }
+
+        function appendToStreamingMessage(messageId, token) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                const contentDiv = message.querySelector('.message-content');
+                if (contentDiv) {
+                    contentDiv.textContent += token;
+                    
+                    // Scroll to bottom to follow the streaming text
+                    const messagesContainer = document.getElementById('chatMessages');
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }
+        }
+
+        function updateStreamingMessage(messageId, content) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                const contentDiv = message.querySelector('.message-content');
+                if (contentDiv) {
+                    contentDiv.textContent = content;
+                    contentDiv.dataset.streaming = 'false';
+                }
+            }
+        }
+
+        function finalizeStreamingMessage(messageId) {
+            const message = document.getElementById(messageId);
+            if (message) {
+                const contentDiv = message.querySelector('.message-content');
+                if (contentDiv) {
+                    contentDiv.dataset.streaming = 'false';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

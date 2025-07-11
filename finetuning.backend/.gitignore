@@ -1,0 +1,12 @@
+venv/
+/venv
+__pycache__/
+/__pychache__
+.idea/
+.env
+.predict.json/
+.predict_filtered.json/
+predict.json
+predict_filtered.json
+examples/*.pkl
+examples/*.json

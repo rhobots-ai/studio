@@ -1,0 +1,17 @@
+[
+  {
+    "instruction": "What is machine learning?",
+    "input": "",
+    "output": "Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed."
+  },
+  {
+    "instruction": "Explain the difference between supervised and unsupervised learning",
+    "input": "",
+    "output": "Supervised learning uses labeled training data to learn a mapping from inputs to outputs, while unsupervised learning finds patterns in data without labeled examples."
+  },
+  {
+    "instruction": "What is a neural network?",
+    "input": "",
+    "output": "A neural network is a computing system inspired by biological neural networks, consisting of interconnected nodes (neurons) that process information through weighted connections."
+  }
+]
