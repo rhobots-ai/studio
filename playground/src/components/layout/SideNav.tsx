@@ -14,9 +14,10 @@ const trainSteps = [
 
 
 const evaluateSteps = [
-  { path: '/evaluate/test-data', label: 'Evaluate Model' },
-  { path: '/evaluate/metrics', label: 'Evaluation Progress' },
-  // { path: '/evaluate/compare', label: 'Compare Models' },
+  { path: '/evaluate/model', label: 'Select Model' },
+  { path: '/evaluate/data', label: 'Upload Data' },
+  { path: '/evaluate/parameters', label: 'Configure Parameters' },
+  { path: '/evaluate/progress', label: 'Evaluation Progress' },
 ];
 
 const predictionSteps = [
@@ -28,8 +29,8 @@ const navItems = [
   { icon: Home, label: 'Dashboard', path: '/' },
   { icon: Database, label: 'Data Preparation', path: '/data-preparation' },
   { icon: Brain, label: 'Train', path: '/configure', subItems: trainSteps },
-  { icon: LineChart, label: 'Evaluate', path: '/evaluate/test-data', subItems: evaluateSteps },
-  { icon: Target, label: 'Prediction', path: '/prediction/model-selection', subItems: predictionSteps },
+  { icon: LineChart, label: 'Evaluate', path: '/evaluate/model', subItems: evaluateSteps },
+  // { icon: Target, label: 'Prediction', path: '/prediction/model-selection', subItems: predictionSteps },
   { icon: MessageSquare, label: 'Chat', path: '/query' },
   { icon: Rocket, label: 'Deploy', path: '/deploy' },
   { icon: Activity, label: 'System Monitor', path: '/monitoring' },
@@ -52,7 +53,7 @@ export function SideNav() {
     if (isTrainingPath) {
       setExpandedItem('/configure');
     } else if (isEvaluationPath) {
-      setExpandedItem('/evaluate/test-data');
+      setExpandedItem('/evaluate/model');
     } else if (isPredictionPath) {
       setExpandedItem('/prediction/model-selection');
     }

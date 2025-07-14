@@ -17,6 +17,10 @@ import shutil
 import base64
 import logging
 
+# Import enhanced models and config processor
+from models.training_models import TrainerConfig, TrainingArgsConfig, EnhancedFinetuneRequest
+from config_processor import merge_trainer_and_training_configs, validate_hub_configuration, get_config_summary
+
 # Import IST timezone utilities
 from timezone_utils import get_ist_timestamp, get_ist_datetime, convert_to_ist_timestamp
 
@@ -1024,11 +1028,31 @@ async def handle_base64_request(request: Request, background_tasks: BackgroundTa
 @app.post("/finetune-with-file", response_model=FinetuneResponse)
 async def start_finetuning_with_file_id(
     file_id: str,
-    config: Dict[str, Any],
+    request: EnhancedFinetuneRequest,
     background_tasks: BackgroundTasks
 ):
-    """Start finetuning with a file_id from the file manager or dataset_id from dataset library"""
+    """Start finetuning with enhanced structured configuration"""
     try:
+        # Extract configurations
+        trainer_config = request.trainer_config
+        training_args_config = request.training_args_config
+        
+        # Validate model name
+        if not trainer_config.model_name or trainer_config.model_name.strip() == '':
+            raise HTTPException(status_code=400, detail='Model name is required')
+        
+        # Validate Hub configuration if enabled
+        hub_validation_errors = validate_hub_configuration(trainer_config)
+        if hub_validation_errors:
+            error_messages = [f"{field}: {error}" for field, error in hub_validation_errors.items()]
+            raise HTTPException(status_code=400, detail=f"Hub configuration errors: {'; '.join(error_messages)}")
+        
+        # Merge configurations for training
+        merged_config = merge_trainer_and_training_configs(trainer_config, training_args_config)
+        
+        # Get configuration summary for logging
+        config_summary = get_config_summary(trainer_config, training_args_config)
+        
         # Check if it's a dataset ID or file ID
         if file_id.startswith('dataset_'):
             # It's a dataset ID, use dataset service
@@ -1041,11 +1065,14 @@ async def start_finetuning_with_file_id(
             # Generate unique job ID
             job_id = str(uuid.uuid4())
             
-            # Initialize job tracking with dataset information
+            # Initialize job tracking with enhanced structured config
             session_data = {
                 "id": job_id,
                 "status": "queued",
-                "config": config,
+                "trainer_config": trainer_config.dict(),
+                "training_args_config": training_args_config.dict(),
+                "merged_config": merged_config,  # For backward compatibility
+                "config_summary": config_summary,
                 "dataset_id": file_id,
                 "dataset_info": {
                     "name": dataset.name,
@@ -1055,7 +1082,7 @@ async def start_finetuning_with_file_id(
                 },
                 "created_at": get_ist_timestamp(),
                 "logs": [],
-                "upload_method": "dataset_library"
+                "upload_method": "dataset_library_enhanced"
             }
             
             training_jobs[job_id] = session_data
@@ -1064,12 +1091,12 @@ async def start_finetuning_with_file_id(
             save_training_session(job_id, session_data)
             
             # Start training in background with dataset
-            background_tasks.add_task(run_training_job_with_dataset, job_id, file_id, config)
+            background_tasks.add_task(run_training_job_with_dataset, job_id, file_id, merged_config)
             
             return FinetuneResponse(
                 job_id=job_id,
                 status="queued",
-                message=f"Finetuning job queued with dataset '{dataset.name}' ({dataset.total_examples} examples)",
+                message=f"Enhanced finetuning job queued with dataset '{dataset.name}' ({dataset.total_examples} examples)",
                 dashboard_url=f"https://finetune_engine.deepcite.in/training/{job_id}"
             )
         else:
@@ -1088,17 +1115,20 @@ async def start_finetuning_with_file_id(
             # Generate unique job ID
             job_id = str(uuid.uuid4())
             
-            # Initialize job tracking with file information
+            # Initialize job tracking with enhanced structured config
             session_data = {
                 "id": job_id,
                 "status": "queued",
-                "config": config,
+                "trainer_config": trainer_config.dict(),
+                "training_args_config": training_args_config.dict(),
+                "merged_config": merged_config,  # For backward compatibility
+                "config_summary": config_summary,
                 "file_id": file_id,
                 "file_info": file_info,
                 "dataset_info": file_info.get('validation_details', {}),
                 "created_at": get_ist_timestamp(),
                 "logs": [],
-                "upload_method": "file_manager"
+                "upload_method": "file_manager_enhanced"
             }
             
             training_jobs[job_id] = session_data
@@ -1107,19 +1137,19 @@ async def start_finetuning_with_file_id(
             save_training_session(job_id, session_data)
             
             # Start training in background with file_id
-            background_tasks.add_task(run_training_job_with_file_id, job_id, file_id, config)
+            background_tasks.add_task(run_training_job_with_file_id, job_id, file_id, merged_config)
             
             return FinetuneResponse(
                 job_id=job_id,
                 status="queued",
-                message=f"Finetuning job queued with file '{file_info['display_name']}' ({file_info['validation_details']['total_rows']} samples)",
+                message=f"Enhanced finetuning job queued with model '{trainer_config.model_name}' using file '{file_info['display_name']}' ({file_info['validation_details']['total_rows']} samples)",
                 dashboard_url=f"https://finetune_engine.deepcite.in/training/{job_id}"
             )
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error starting training: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error starting enhanced training: {str(e)}")
 
 @app.post("/finetune-legacy", response_model=FinetuneResponse)
 async def start_finetuning_legacy(request: FinetuneRequest, background_tasks: BackgroundTasks):

@@ -8,9 +8,7 @@ import PredictionProgress from './pages/prediction/PredictionProgress';
 import TuningProgress from './pages/TuningProgress';
 import TrainingSession from './pages/TrainingSession';
 import ModelQuery from './pages/ModelQuery';
-import TestData from './pages/evaluate/TestData';
-import Metrics from './pages/evaluate/Metrics';
-import Compare from './pages/evaluate/Compare';
+import Evaluate from './pages/evaluate';
 import MonitoringDashboard from './pages/monitoring/Dashboard';
 import Settings from './pages/Settings';
 
@@ -28,11 +26,7 @@ function App() {
         <Route path="progress" element={<TuningProgress />} />
         <Route path="training/:sessionId" element={<TrainingSession />} />
         <Route path="query" element={<ModelQuery />} />
-        <Route path="evaluate">
-          <Route path="test-data" element={<TestData />} />
-          <Route path="metrics" element={<Metrics />} />
-          <Route path="compare" element={<Compare />} />
-        </Route>
+        <Route path="evaluate/*" element={<Evaluate />} />
         <Route path="monitoring" element={<MonitoringDashboard />} />
         <Route path="settings" element={<Settings />} />
       </Route>

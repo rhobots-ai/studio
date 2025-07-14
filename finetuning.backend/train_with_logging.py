@@ -171,6 +171,74 @@ def train_with_config(csv_path: str = None, config: dict = None, session_id: str
             "hub_model_id": os.getenv("HUB_MODEL_ID")
         }
     
+    # Define valid parameters for FastLanguageModel.from_pretrained
+    VALID_MODEL_PARAMS = {
+        "model_name", "max_seq_length", "dtype", "load_in_4bit", "load_in_8bit",
+        "device_map", "torch_dtype", "attn_implementation", "trust_remote_code",
+        "use_cache", "low_cpu_mem_usage", "revision", "subfolder", "token",
+        "cache_dir", "force_download", "resume_download", "proxies", "local_files_only",
+        "use_auth_token", "revision", "torch_dtype", "device_map", "max_memory",
+        "offload_folder", "offload_state_dict", "load_in_8bit", "load_in_4bit",
+        "quantization_config", "bnb_4bit_compute_dtype", "bnb_4bit_quant_type",
+        "bnb_4bit_use_double_quant", "bnb_4bit_quant_storage"
+    }
+    
+    # Define valid parameters for LoRA configuration
+    VALID_LORA_PARAMS = {
+        "r", "lora_alpha", "target_modules", "lora_dropout", "fan_in_fan_out",
+        "bias", "modules_to_save", "init_lora_weights", "layers_to_transform",
+        "layers_pattern", "rank_pattern", "alpha_pattern", "use_rslora",
+        "use_dora", "layer_replication", "runtime_config", "loaded_in_8bit",
+        "loaded_in_4bit", "loftq_config", "use_gradient_checkpointing",
+        "random_state", "lora_rank", "lora_r"  # Include both naming conventions
+    }
+    
+    # Define valid parameters for TrainingArguments
+    VALID_TRAINING_PARAMS = {
+        # Core training parameters
+        "output_dir", "num_train_epochs", "per_device_train_batch_size", 
+        "gradient_accumulation_steps", "learning_rate", "weight_decay",
+        "warmup_steps", "warmup_ratio", "max_steps", "max_grad_norm",
+        
+        # Optimization parameters
+        "optim", "adam_beta1", "adam_beta2", "adam_epsilon", "lr_scheduler_type",
+        "lr_scheduler_kwargs", "polynomial_decay_power", "cosine_schedule_num_cycles",
+        
+        # Precision and performance
+        "fp16", "bf16", "fp16_opt_level", "half_precision_backend", "bf16_full_eval",
+        "tf32", "dataloader_drop_last", "dataloader_num_workers", "dataloader_pin_memory",
+        
+        # Logging and saving
+        "logging_dir", "logging_strategy", "logging_steps", "logging_first_step",
+        "save_strategy", "save_steps", "save_total_limit", "save_on_each_node",
+        "save_safetensors", "save_only_model", "restore_callback_states_from_checkpoint",
+        
+        # Evaluation
+        "evaluation_strategy", "eval_steps", "eval_delay", "per_device_eval_batch_size",
+        "eval_accumulation_steps", "eval_on_start", "greater_is_better", "metric_for_best_model",
+        
+        # Advanced training
+        "gradient_checkpointing", "gradient_checkpointing_kwargs", "include_inputs_for_metrics",
+        "auto_find_batch_size", "full_determinism", "torchdynamo", "ray_scope",
+        
+        # Distributed training
+        "local_rank", "ddp_backend", "ddp_broadcast_buffers", "ddp_bucket_cap_mb",
+        "ddp_find_unused_parameters", "ddp_timeout", "dataloader_persistent_workers",
+        
+        # Reporting and debugging
+        "report_to", "run_name", "disable_tqdm", "remove_unused_columns", "label_names",
+        "load_best_model_at_end", "ignore_data_skip", "fsdp", "fsdp_config",
+        
+        # Memory optimization
+        "deepspeed", "label_smoothing_factor", "debug", "sharded_ddp", "fsdp_transformer_layer_cls_to_wrap",
+        
+        # Reproducibility
+        "seed", "data_seed", "jit_mode_eval", "use_ipex", "use_cpu", "use_mps_device",
+        
+        # Hub integration
+        "push_to_hub", "hub_model_id", "hub_strategy", "hub_token", "hub_private_repo"
+    }
+    
     # Setup session-specific logging
     if session_id:
         session_logs_dir = f"training_sessions/{session_id}/logs"
@@ -252,27 +320,83 @@ def train_with_config(csv_path: str = None, config: dict = None, session_id: str
         load_in_4bit = False
         load_in_8bit = False
     
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=config.get("model_name", "unsloth/llama-3-8b-bnb-4bit"),
-        max_seq_length=config.get("max_seq_length", 2048),
-        dtype=None,
-        load_in_4bit=load_in_4bit,
-        load_in_8bit=load_in_8bit,
-    )
+    # Build model loading parameters with safe filtering
+    model_params = {
+        "model_name": config.get("model_name", "unsloth/llama-3-8b-bnb-4bit"),
+        "max_seq_length": config.get("max_seq_length", 2048),
+        "dtype": config.get("dtype", None),
+        "load_in_4bit": load_in_4bit,
+        "load_in_8bit": load_in_8bit,
+    }
     
-    model = FastLanguageModel.get_peft_model(
-        model,
-        r=config.get("lora_r", 16),
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
-                       "gate_proj", "up_proj", "down_proj"],
-        lora_alpha=config.get("lora_alpha", 16),
-        lora_dropout=config.get("lora_dropout", 0.0),
-        bias="none",
-        use_gradient_checkpointing="unsloth",
-        random_state=3407,
-        use_rslora=False,
-        loftq_config=None,
-    )
+    # Add valid custom model parameters from config
+    custom_model_params_applied = []
+    for param_name, param_value in config.items():
+        if param_name in VALID_MODEL_PARAMS and param_name not in model_params:
+            model_params[param_name] = param_value
+            custom_model_params_applied.append(f"{param_name}={param_value}")
+    
+    # Filter out None values to avoid issues
+    model_params = {k: v for k, v in model_params.items() if v is not None}
+    
+    # Log custom model parameters being applied
+    if custom_model_params_applied:
+        log_entry = {
+            "timestamp": get_ist_timestamp(),
+            "type": "custom_model_params",
+            "level": "INFO",
+            "message": f"🔧 Applying custom model parameters: {', '.join(custom_model_params_applied)}",
+            "step": 0,
+            "epoch": 0,
+            "session_id": session_id
+        }
+        write_log_entry(log_entry)
+    
+    model, tokenizer = FastLanguageModel.from_pretrained(**model_params)
+    
+    # Build LoRA parameters with safe filtering
+    lora_params = {
+        "r": config.get("lora_r", config.get("r", 16)),  # Support both naming conventions
+        "target_modules": config.get("target_modules", ["q_proj", "k_proj", "v_proj", "o_proj",
+                                                        "gate_proj", "up_proj", "down_proj"]),
+        "lora_alpha": config.get("lora_alpha", 16),
+        "lora_dropout": config.get("lora_dropout", 0.0),
+        "bias": config.get("bias", "none"),
+        "use_gradient_checkpointing": config.get("use_gradient_checkpointing", "unsloth"),
+        "random_state": config.get("random_state", 3407),
+        "use_rslora": config.get("use_rslora", False),
+        "loftq_config": config.get("loftq_config", None),
+    }
+    
+    # Add valid custom LoRA parameters from config
+    custom_lora_params_applied = []
+    for param_name, param_value in config.items():
+        if param_name in VALID_LORA_PARAMS and param_name not in lora_params:
+            # Handle naming convention differences
+            if param_name == "lora_rank":
+                lora_params["r"] = param_value
+                custom_lora_params_applied.append(f"r={param_value} (from lora_rank)")
+            else:
+                lora_params[param_name] = param_value
+                custom_lora_params_applied.append(f"{param_name}={param_value}")
+    
+    # Filter out None values to avoid issues
+    lora_params = {k: v for k, v in lora_params.items() if v is not None}
+    
+    # Log custom LoRA parameters being applied
+    if custom_lora_params_applied:
+        log_entry = {
+            "timestamp": get_ist_timestamp(),
+            "type": "custom_lora_params",
+            "level": "INFO",
+            "message": f"🔧 Applying custom LoRA parameters: {', '.join(custom_lora_params_applied)}",
+            "step": 0,
+            "epoch": 0,
+            "session_id": session_id
+        }
+        write_log_entry(log_entry)
+    
+    model = FastLanguageModel.get_peft_model(model, **lora_params)
     
     # Log model setup completion
     log_entry = {
@@ -324,25 +448,52 @@ def train_with_config(csv_path: str = None, config: dict = None, session_id: str
     }
     write_log_entry(log_entry)
     
-    # Training arguments with configurable parameters
-    training_args = TrainingArguments(
-        output_dir=config.get("output_dir", "./results"),
-        num_train_epochs=config.get("num_train_epochs", 3),
-        per_device_train_batch_size=config.get("per_device_train_batch_size", 2),
-        gradient_accumulation_steps=config.get("gradient_accumulation_steps", 4),
-        optim="adamw_8bit",
-        warmup_steps=config.get("warmup_steps", 5),
-        # max_steps=config.get("max_steps", 60),
-        learning_rate=config.get("learning_rate", 2e-4),
-        fp16=not torch.cuda.is_bf16_supported(),
-        bf16=torch.cuda.is_bf16_supported(),
-        logging_steps=config.get("logging_steps", 1),
-        logging_dir="./logs",
-        save_steps=config.get("save_steps", 25),
-        save_total_limit=3,
-        dataloader_pin_memory=False,
-        report_to=None,  # Disable wandb/tensorboard
-    )
+    # Build training arguments with safe filtering
+    training_params = {
+        "output_dir": config.get("output_dir", "./results"),
+        "num_train_epochs": config.get("num_train_epochs", 3),
+        "per_device_train_batch_size": config.get("per_device_train_batch_size", 2),
+        "gradient_accumulation_steps": config.get("gradient_accumulation_steps", 4),
+        "learning_rate": config.get("learning_rate", 2e-4),
+        "warmup_steps": config.get("warmup_steps", 5),
+        "logging_steps": config.get("logging_steps", 1),
+        "save_steps": config.get("save_steps", 25),
+        
+        # Default values that can be overridden by custom parameters
+        "optim": config.get("optim", "adamw_8bit"),
+        "logging_dir": config.get("logging_dir", "./logs"),
+        "save_total_limit": config.get("save_total_limit", 3),
+        "dataloader_pin_memory": config.get("dataloader_pin_memory", False),
+        "report_to": config.get("report_to", None),
+        "fp16": config.get("fp16", not torch.cuda.is_bf16_supported()),
+        "bf16": config.get("bf16", torch.cuda.is_bf16_supported()),
+    }
+    
+    # Add valid custom training parameters from config
+    custom_training_params_applied = []
+    for param_name, param_value in config.items():
+        if param_name in VALID_TRAINING_PARAMS and param_name not in training_params:
+            training_params[param_name] = param_value
+            custom_training_params_applied.append(f"{param_name}={param_value}")
+    
+    # Filter out None values to avoid issues
+    training_params = {k: v for k, v in training_params.items() if v is not None}
+    
+    # Log custom training parameters being applied
+    if custom_training_params_applied:
+        log_entry = {
+            "timestamp": get_ist_timestamp(),
+            "type": "custom_training_params",
+            "level": "INFO",
+            "message": f"🔧 Applying custom training parameters: {', '.join(custom_training_params_applied)}",
+            "step": 0,
+            "epoch": 0,
+            "session_id": session_id
+        }
+        write_log_entry(log_entry)
+    
+    # Create TrainingArguments with all parameters
+    training_args = TrainingArguments(**training_params)
     
     # Log training arguments
     log_entry = {

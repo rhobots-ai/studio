@@ -408,6 +408,55 @@ export const DataPreparation: React.FC = () => {
         </div>
       )}
 
+
+      {/* Quick Stats Overview */}
+      {datasets.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <BarChart3 className="h-5 w-5 mr-2" />
+              Dataset Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  {datasets.length}
+                </div>
+                <div className="text-sm text-blue-800 dark:text-blue-200">
+                  Total Datasets
+                </div>
+              </div>
+              <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                  {datasets.reduce((sum, d) => sum + d.total_examples, 0).toLocaleString()}
+                </div>
+                <div className="text-sm text-green-800 dark:text-green-200">
+                  Total Examples
+                </div>
+              </div>
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                  {datasetService.formatFileSize(datasets.reduce((sum, d) => sum + d.file_size, 0))}
+                </div>
+                <div className="text-sm text-purple-800 dark:text-purple-200">
+                  Total Size
+                </div>
+              </div>
+              <div className="bg-orange-50 dark:bg-orange-900/20 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                  {(datasets.reduce((sum, d) => sum + d.processing_stats.success_rate, 0) / datasets.length).toFixed(1)}%
+                </div>
+                <div className="text-sm text-orange-800 dark:text-orange-200">
+                  Avg Success Rate
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Datasets Grid */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
@@ -428,13 +477,43 @@ export const DataPreparation: React.FC = () => {
               }
             </p>
             {!searchTerm && selectedTags.length === 0 && (
-              <Button
-                onClick={() => setCurrentView('upload')}
-                className="flex items-center mx-auto"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Dataset
-              </Button>
+              <>
+                <Button
+                  onClick={() => setCurrentView('upload')}
+                  className="flex items-center mx-auto mb-6"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Dataset
+                </Button>
+                
+                {/* Getting Started Tips */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mt-6 text-left max-w-2xl mx-auto">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center">
+                    <AlertCircle className="h-5 w-5 mr-2" />
+                    Getting Started with Data Preparation
+                  </h4>
+                  <div className="space-y-3 text-sm text-blue-800 dark:text-blue-200">
+                    <div className="flex items-start">
+                      <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">1</div>
+                      <div>
+                        <strong>Upload your data file</strong> - Support for CSV, JSON, JSONL, Excel, and Pickle formats
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">2</div>
+                      <div>
+                        <strong>Map your columns</strong> - Define instruction, input, and output mappings for training
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3 mt-0.5">3</div>
+                      <div>
+                        <strong>Review and save</strong> - Preview your dataset and save it for training or evaluation
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -444,6 +523,191 @@ export const DataPreparation: React.FC = () => {
             <DatasetCard key={dataset.dataset_id} dataset={dataset} />
           ))}
         </div>
+      )}
+
+      {/* Data Preparation Guide */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            Data Preparation Guide
+          </CardTitle>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">
+            Best practices for preparing your training data
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Data Types */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Data Types</h3>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
+                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Structured Data</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    CSV, Excel files with clear column headers
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="bg-green-100 dark:bg-green-900 p-2 rounded-lg">
+                  <Database className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h4 className="font-medium text-gray-900 dark:text-gray-100">JSON/JSONL Data</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Flexible format for complex data structures
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Preparation Tips */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              Preparation Tips
+            </h4>
+            <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                Ensure your data has clear instruction and output columns
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                Remove or handle missing values appropriately
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                Consider data quality vs. quantity trade-offs
+              </li>
+              <li className="flex items-start">
+                <span className="text-blue-600 mr-2">•</span>
+                Test with a small sample before full processing
+              </li>
+            </ul>
+          </div>
+
+          {/* Quality Checklist */}
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
+            <h4 className="font-medium text-green-900 dark:text-green-100 mb-3 flex items-center">
+              <CheckCircle className="h-5 w-5 mr-2" />
+              Quality Checklist
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="flex items-center text-green-800 dark:text-green-200">
+                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                Consistent data format
+              </div>
+              <div className="flex items-center text-green-800 dark:text-green-200">
+                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                Clear column headers
+              </div>
+              <div className="flex items-center text-green-800 dark:text-green-200">
+                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                No duplicate entries
+              </div>
+              <div className="flex items-center text-green-800 dark:text-green-200">
+                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                Balanced data distribution
+              </div>
+            </div>
+          </div>
+
+          {/* Recommended Workflow */}
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+              <Target className="h-5 w-5 mr-2" />
+              Recommended Workflow
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center">
+                <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">1</div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <strong>Upload & Validate:</strong> Check file format and structure
+                </span>
+              </div>
+              <div className="flex items-center">
+                <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">2</div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <strong>Map Columns:</strong> Define instruction, input, and output mappings
+                </span>
+              </div>
+              <div className="flex items-center">
+                <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">3</div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <strong>Preview & Test:</strong> Review sample data and processing results
+                </span>
+              </div>
+              <div className="flex items-center">
+                <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">4</div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <strong>Save & Use:</strong> Save dataset for training or evaluation
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Activity */}
+      {datasets.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Calendar className="h-5 w-5 mr-2" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {datasets
+                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                .slice(0, 3)
+                .map(dataset => (
+                  <div key={dataset.dataset_id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg mr-3">
+                        <Database className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">
+                          {dataset.name}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                          Created {datasetService.formatRelativeTime(dataset.created_at)} • {dataset.total_examples.toLocaleString()} examples
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 rounded-full text-xs ${
+                        dataset.processing_stats.success_rate >= 90 
+                          ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                          : dataset.processing_stats.success_rate >= 70
+                          ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200'
+                          : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
+                      }`}>
+                        {dataset.processing_stats.success_rate.toFixed(1)}% success
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setPreviewDataset(dataset);
+                          setCurrentView('preview');
+                        }}
+                      >
+                        View
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
