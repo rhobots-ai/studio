@@ -53,8 +53,7 @@ def start_api_server():
             sys.executable, "-m", "uvicorn", 
             "main:app", 
             "--host", "0.0.0.0", 
-            "--port", "8000",
-            "--reload"
+            "--port", "8000"
         ])
     except KeyboardInterrupt:
         print("\n\n🛑 Server stopped by user")
