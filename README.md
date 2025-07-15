@@ -10,7 +10,7 @@
       </h3>
    </div>
 
-   <span>Studio uses <a href="https://github.com/orgs/rhobots-ai/discussions"><strong>Github Discussions</strong></a>  for Support and Feature Requests.</span>
+   <span>RHStudio uses <a href="https://github.com/orgs/rhobots-ai/discussions"><strong>Github Discussions</strong></a>  for Support and Feature Requests.</span>
    <br/>
    <br/>
    <div>
@@ -18,20 +18,24 @@
 </div>
 
 <p align="center">
-   <a href="https://github.com/rhobots-ai/Studio/blob/main/LICENSE">
+   <a href="https://github.com/rhobots-ai/studio/blob/main/LICENSE">
    <img src="https://img.shields.io/badge/License-MIT-E11311.svg" alt="MIT License">
    </a>
 </p>
 
-Studio is an **open source AI Fine Tuning** platform.
-From Text to Video—One AI for All Your Research.
-It helps you analyze **unstructured data**, extract insights, and collaborate in one powerful workspace. Studio can be **self-hosted in minutes**.
+<h3 align="center">
+RHStudio – Fine-Tune. Evaluate. Deploy. All in One Open Platform.
+</h3>
 
-## 📦 Deploy Studio
+RHStudio is an open-source platform for curating datasets, fine-tuning language models, evaluating performance, and running inference—all in one unified interface.
+Whether you're a researcher or a developer, RHStudio simplifies and accelerates the entire LLM lifecycle.
+RHStudio can be **self-hosted in minutes**.
 
-### Self-Host Studio
+## 📦 Deploy RHStudio
 
-Run Studio on your own machine in 5 minutes using Docker Compose.
+### Self-Host RHStudio
+
+Run RHStudio on your own machine in 5 minutes using Docker Compose.
 
   ```bash
   # Get a copy of the latest Langfuse repository

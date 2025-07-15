@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Studio is an open-source AI Fine Tuning platform that helps analyze unstructured data, extract insights, and collaborate in one powerful workspace. The project is structured as a monorepo with two main components:
+RHStudio is an open-source AI Fine Tuning platform that helps analyze unstructured data, extract insights, and collaborate in one powerful workspace. The project is structured as a monorepo with two main components:
 
 - **Core (Python)**: FastAPI-based backend service for model fine-tuning with real-time monitoring
 - **Web (React/TypeScript)**: Frontend dashboard for managing training sessions and monitoring progress

@@ -11,26 +11,26 @@ and its licensed materials.
 END NOTE
 
 START OF LICENSE
-Studio Enterprise license (the “Enterprise License” or "EE license")
+RHStudio Enterprise license (the “Enterprise License” or "EE license")
 
-Copyright (c) 2025 Studio
+Copyright (c) 2025 RHStudio
 
-With regard to the Studio Enterprise Software:
+With regard to the RHStudio Enterprise Software:
 This software and associated documentation files (the "Software") may only be
 used, if you (and any entity that you represent) have agreed to,
-and are in compliance with, the applicable Studio Terms of Service, available
-at https://Studio.rhobots.ai/terms (the “Enterprise Terms”), or other
-agreement governing the use of the Software, as agreed by you and Studio,
-and otherwise have a valid Studio Enterprise License.
+and are in compliance with, the applicable RHStudio Terms of Service, available
+at https://studio.rhobots.ai/terms (the “Enterprise Terms”), or other
+agreement governing the use of the Software, as agreed by you and RHStudio,
+and otherwise have a valid RHStudio Enterprise License.
 
 Subject to the foregoing sentence, you are free to
-modify this Software and publish patches to the Software. You agree that Studio
+modify this Software and publish patches to the Software. You agree that RHStudio
 and/or its licensors (as applicable) retain all right, title and interest in and
 to all such modifications and/or patches, and all such modifications and/or
 patches may only be used, copied, modified, displayed, distributed, or otherwise
-exploited with a valid Studio Enterprise License. Notwithstanding the foregoing, you may copy and modify
+exploited with a valid RHStudio Enterprise License. Notwithstanding the foregoing, you may copy and modify
 the Software for development and testing purposes, without requiring a
-subscription. You agree that Studio and/or its licensors (as applicable) retain
+subscription. You agree that RHStudio and/or its licensors (as applicable) retain
 all right, title and interest in and to all such modifications. You are not
 granted any other rights beyond what is expressly stated herein. Subject to the
 foregoing, it is forbidden to copy, merge, publish, distribute, sublicense,
@@ -44,7 +44,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-For all third party components incorporated into the Studio Software, those
+For all third party components incorporated into the RHStudio Software, those
 components are licensed under the original license provided by the owner of the
 applicable component.
 
