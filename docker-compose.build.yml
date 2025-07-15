@@ -5,14 +5,13 @@ services:
       context: .
       args:
         - NODE_ENV=${NODE_ENV:-development}
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:5001}
-        - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-localhost:5001}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
     image: rhobotsai/studio-web:latest
     ports:
-      - "3000:3000"
+      - "5173:5173"
     restart: always
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:5173" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -23,17 +22,24 @@ services:
       context: .
     image: rhobotsai/studio-core:latest
     ports:
-      - "5001:5001"
+      - "8000:8000"
     volumes:
       - core_data:/app/training_sessions
     environment:
       HF_TOKEN: ${HF_TOKEN:-}
     restart: always
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
 
 volumes:
   core_data:

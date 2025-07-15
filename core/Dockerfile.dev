@@ -1,41 +1,39 @@
 # -----------------------------------
-# Dev Image for RAG
+# Dev Image for Core
 # -----------------------------------
-FROM python:3.12-slim
+FROM nvidia/cuda:12.8.1-devel-ubuntu24.04
+
+# Set CUDA environment variables
+ENV CUDA_HOME=/usr/local/cuda
+ENV PATH=${CUDA_HOME}/bin:${PATH}
+ENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=UTF-8
-ENV VLLM_TARGET_DEVICE=cpu
 
-RUN echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99custom && \
-    echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99custom && \
-    echo "Acquire::BrokenProxy    true;" >> /etc/apt/apt.conf.d/99custom
-
-# Install system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    git \
-    curl \
-    dumb-init \
-    libpq-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential --fix-missing && \
+# Install Python 3.12 and essential tools
+RUN apt-get update && apt-get install -y \
+    python3.12 python3.12-dev python3.12-venv python3-pip \
+    build-essential git curl wget dumb-init && \
+    ln -sf /usr/bin/python3.12 /usr/bin/python && \
+    ln -sf /usr/bin/pip3 /usr/bin/pip && \
+    python -m venv /venv && \
+    /venv/bin/pip install --upgrade pip && \
     rm -rf /var/lib/apt/lists/* \
 
 # Set working directory
 WORKDIR /app
 
 # Copy only requirements first for cache optimization
-COPY requirements.txt requirements.txt
+COPY ./core/requirements.txt requirements.txt
 
-RUN pip install --upgrade pip
+RUN /venv/bin/pip install --no-cache-dir -r requirements.txt
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN /venv/bin/pip install --no-cache-dir vllm==0.9.1
+
+COPY ./core .
 
 # Default command for development
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["python", "main.py"]
+CMD ["/venv/bin/python", "main.py"]

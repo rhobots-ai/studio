@@ -5,23 +5,22 @@ services:
       context: .
       args:
         - NODE_ENV=${NODE_ENV:-development}
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:5001}
-        - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-localhost:5001}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8000}
     depends_on:
       core:
         condition: service_healthy
     volumes:
       - ./ui:/app/web
     ports:
-      - "3000:3000"
+      - "5173:5173"
     restart: always
 
   core:
     build:
-      dockerfile: ./core/Dockerfile
+      dockerfile: ./core/Dockerfile.dev
       context: .
     ports:
-      - "5001:5001"
+      - "8000:8000"
     volumes:
       - ./core:/app
     environment:
@@ -32,3 +31,10 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
