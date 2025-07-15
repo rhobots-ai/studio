@@ -1,0 +1,23 @@
+fastapi
+uvicorn[standard]
+pydantic
+flask
+pandas
+openpyxl
+python-multipart
+requests
+python-dotenv
+unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git
+torch
+transformers
+datasets
+trl
+accelerate
+bitsandbytes
+xformers
+pytz
+# System monitoring dependencies
+psutil
+GPUtil
+websockets
+vllm
