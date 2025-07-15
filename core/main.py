@@ -3485,6 +3485,16 @@ async def delete_configuration(config_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting configuration: {str(e)}")
 
+
+@app.get("/api/health")
+async def health():
+    """Health check endpoint.
+
+    Returns:
+        Response: Health status response
+    """
+    return {"status": "ready"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
