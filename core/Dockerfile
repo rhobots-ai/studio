@@ -47,4 +47,4 @@ RUN rm -rf ~/.cache
 ## Runtime Image
 ## -----------------------------------
 #CMD ["tail", "-f", "/dev/null"]
-CMD ["python", "start_server.py"]
+CMD ["/venv/bin/python", "start_server.py"]
