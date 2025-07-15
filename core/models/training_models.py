@@ -10,7 +10,7 @@ class TrainerConfig(BaseModel):
     hub_model_id: Optional[str] = Field(default=None, description="Hugging Face Hub repository ID")
     
     # Quantization Configuration
-    quantization: str = Field(default="4bit", regex="^(4bit|8bit|none)$", description="Model quantization method")
+    quantization: str = Field(default="4bit", pattern="^(4bit|8bit|none)$", description="Model quantization method")
     
     # Max Sequence Length (trainer-level setting)
     max_seq_length: int = Field(default=2048, ge=128, le=4096, description="Maximum sequence length for training")
