@@ -21,6 +21,11 @@
    <a href="https://github.com/rhobots-ai/studio/blob/main/LICENSE">
    <img src="https://img.shields.io/badge/License-MIT-E11311.svg" alt="MIT License">
    </a>
+   <br/>
+   <a href="https://discord.gg/bVQrhHDjkY" target="_blank">
+      <img src="https://img.shields.io/discord/1394649845205303436?logo=discord&labelColor=%20%235462eb&logoColor=%20%23f5f5f5&color=%20%235462eb"
+      alt="chat on Discord">
+   </a>
 </p>
 
 <h3 align="center">
