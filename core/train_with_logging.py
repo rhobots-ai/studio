@@ -798,10 +798,10 @@ def extract_input_schema_from_training(config: dict, dataset_info: dict) -> dict
             # Fallback paths
             possible_paths.extend([
                 filename,
-                f"finetuning.backend/{filename}",
+                f"core/{filename}",
                 f"./{filename}",
                 "sample_training_data.json",  # fallback
-                "finetuning.backend/sample_training_data.json"  # fallback
+                "core/sample_training_data.json"  # fallback
             ])
             
             for path in possible_paths:
@@ -920,10 +920,10 @@ def extract_output_schema_from_training(config: dict, dataset_info: dict = None)
                 # Fallback paths
                 possible_paths.extend([
                     filename,
-                    f"finetuning.backend/{filename}",
+                    f"core/{filename}",
                     f"./{filename}",
                     "sample_training_data.json",
-                    "finetuning.backend/sample_training_data.json"
+                    "core/sample_training_data.json"
                 ])
                 
                 for path in possible_paths:
@@ -1026,10 +1026,10 @@ def extract_static_instruction_from_training(config: dict, dataset_info: dict = 
                 # Fallback paths
                 possible_paths.extend([
                     filename,
-                    f"finetuning.backend/{filename}",
+                    f"core/{filename}",
                     f"./{filename}",
                     "sample_training_data.json",
-                    "finetuning.backend/sample_training_data.json"
+                    "core/sample_training_data.json"
                 ])
                 
                 for path in possible_paths:

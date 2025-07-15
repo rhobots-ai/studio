@@ -1,0 +1,32 @@
+services:
+  web:
+    image: rhobotsai/studio-web:latest
+    depends_on:
+      core:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  core:
+    image: rhobotsai/studio-core:latest
+    ports:
+      - "5001:5001"
+    volumes:
+      - core_data:/app/training_sessions
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+volumes:
+  core_data:
+    driver: local

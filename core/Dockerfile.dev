@@ -1,0 +1,41 @@
+# -----------------------------------
+# Dev Image for RAG
+# -----------------------------------
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONIOENCODING=UTF-8
+ENV VLLM_TARGET_DEVICE=cpu
+
+RUN echo "Acquire::http::Pipeline-Depth 0;" > /etc/apt/apt.conf.d/99custom && \
+    echo "Acquire::http::No-Cache true;" >> /etc/apt/apt.conf.d/99custom && \
+    echo "Acquire::BrokenProxy    true;" >> /etc/apt/apt.conf.d/99custom
+
+# Install system dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    dumb-init \
+    libpq-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential --fix-missing && \
+    rm -rf /var/lib/apt/lists/* \
+
+# Set working directory
+WORKDIR /app
+
+# Copy only requirements first for cache optimization
+COPY requirements.txt requirements.txt
+
+RUN pip install --upgrade pip
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Default command for development
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["python", "main.py"]

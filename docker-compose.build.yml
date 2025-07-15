@@ -1,0 +1,40 @@
+services:
+  web:
+    build:
+      dockerfile: ./web/Dockerfile
+      context: .
+      args:
+        - NODE_ENV=${NODE_ENV:-development}
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:5001}
+        - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-localhost:5001}
+    image: rhobotsai/studio-web:latest
+    ports:
+      - "3000:3000"
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  core:
+    build:
+      dockerfile: ./core/Dockerfile
+      context: .
+    image: rhobotsai/studio-core:latest
+    ports:
+      - "5001:5001"
+    volumes:
+      - core_data:/app/training_sessions
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    restart: always
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5001/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  core_data:
+    driver: local
