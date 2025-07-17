@@ -190,7 +190,7 @@ def train_with_config(csv_path: str = None, config: dict = None, session_id: str
         "layers_pattern", "rank_pattern", "alpha_pattern", "use_rslora",
         "use_dora", "layer_replication", "runtime_config", "loaded_in_8bit",
         "loaded_in_4bit", "loftq_config", "use_gradient_checkpointing",
-        "random_state", "lora_rank", "lora_r"  # Include both naming conventions
+        "random_state", "lora_rank",
     }
     
     # Define valid parameters for TrainingArguments
