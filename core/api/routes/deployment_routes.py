@@ -5,7 +5,7 @@ import json
 
 from deployment_manager import deployment_manager, DeploymentConfig
 
-router = APIRouter(prefix="/api/")
+router = APIRouter(prefix="/api")
 
 class DeploymentRequest(BaseModel):
     """Request to deploy a model"""
