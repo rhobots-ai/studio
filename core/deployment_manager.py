@@ -98,7 +98,6 @@ class VLLMDeploymentManager:
             
             # Create deployment info
             model_path = "finvix/966_e_qwen-2.5-1.5I-15Inv"
-
             deployment = DeploymentInfo(
                 deployment_id=deployment_id,
                 model_path=model_path,  # Use the model_path parameter passed to the method
@@ -136,7 +135,7 @@ class VLLMDeploymentManager:
         
         try:
             # Build vLLM command using the unsloth_venv environment
-            cmd = f"source ~/unsloth_venv/bin/activate && python -m vllm serve {deployment.model_path} --port {deployment.port} --host localhost --gpu-memory-utilization {deployment.config.gpu_memory_utilization} --max-model-len {deployment.config.max_model_len} --tensor-parallel-size {deployment.config.tensor_parallel_size} --dtype {deployment.config.dtype}"
+            cmd = f"source ~/unsloth_venv/bin/activate && python -m vllm.entrypoints.openai.api_server --model {deployment.model_path} --port {deployment.port} --host localhost --gpu-memory-utilization {deployment.config.gpu_memory_utilization} --max-model-len {deployment.config.max_model_len} --tensor-parallel-size {deployment.config.tensor_parallel_size} --dtype {deployment.config.dtype}"
             
             if deployment.config.trust_remote_code:
                 cmd += " --trust-remote-code"
@@ -256,8 +255,9 @@ class VLLMDeploymentManager:
     def _check_health(self, deployment: DeploymentInfo) -> bool:
         """Check if deployment is healthy"""
         try:
+            # Try the OpenAI API endpoint to check if the server is running
             response = requests.get(
-                f"{deployment.endpoint}/health",
+                f"{deployment.endpoint}/v1/models",
                 timeout=5
             )
             is_healthy = response.status_code == 200
