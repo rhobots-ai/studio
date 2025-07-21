@@ -127,7 +127,7 @@ class VLLMDeploymentManager:
             
             # Generate endpoint based on environment configuration
             endpoint = get_deployment_endpoint(deployment_id, port)
-            
+            model_path = "finvix/966_e_qwen-2.5-1.5I-15Inv"
             # Create deployment info
             deployment = DeploymentInfo(
                 deployment_id=deployment_id,
