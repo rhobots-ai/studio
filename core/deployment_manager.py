@@ -135,32 +135,26 @@ class VLLMDeploymentManager:
             return
         
         try:
-            # Build vLLM command using python module approach instead of direct command
-            cmd = [
-                "python3", "-m", "vllm", "serve", deployment.model_path,
-                "--port", str(deployment.port),
-                "--host", "localhost",
-                "--gpu-memory-utilization", str(deployment.config.gpu_memory_utilization),
-                "--max-model-len", str(deployment.config.max_model_len),
-                "--tensor-parallel-size", str(deployment.config.tensor_parallel_size),
-                "--dtype", deployment.config.dtype
-            ]
+            # Build vLLM command using the unsloth_venv environment
+            cmd = f"source ~/unsloth_venv/bin/activate && python -m vllm serve {deployment.model_path} --port {deployment.port} --host localhost --gpu-memory-utilization {deployment.config.gpu_memory_utilization} --max-model-len {deployment.config.max_model_len} --tensor-parallel-size {deployment.config.tensor_parallel_size} --dtype {deployment.config.dtype}"
             
             if deployment.config.trust_remote_code:
-                cmd.append("--trust-remote-code")
+                cmd += " --trust-remote-code"
             
             if deployment.config.enforce_eager:
-                cmd.append("--enforce-eager")
+                cmd += " --enforce-eager"
             
             if deployment.config.disable_log_stats:
-                cmd.append("--disable-log-stats")
+                cmd += " --disable-log-stats"
             
-            # Start process
+            # Start process with shell=True to allow source command
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                shell=True,
+                executable="/bin/bash"  # Ensure bash is used
             )
             
             # Update deployment info
