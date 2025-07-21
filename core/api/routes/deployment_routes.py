@@ -195,6 +195,7 @@ async def test_deployment(deployment_id: str, request: DeploymentTestRequest):
     """Test a deployment by sending a message"""
     import time
     import requests
+    from deployment_manager import get_health_check_url
     
     deployment = deployment_manager.get_deployment(deployment_id)
     if not deployment:
@@ -216,9 +217,12 @@ async def test_deployment(deployment_id: str, request: DeploymentTestRequest):
         # Measure latency
         start_time = time.time()
         
-        # Send request to vLLM server
+        # Use localhost URL for internal testing (avoids circular routing)
+        internal_url = get_health_check_url(deployment)
+        
+        # Send request to vLLM server directly
         response = requests.post(
-            f"{deployment.endpoint}/v1/chat/completions",
+            f"{internal_url}/v1/chat/completions",
             json=payload,
             timeout=30
         )
@@ -227,25 +231,39 @@ async def test_deployment(deployment_id: str, request: DeploymentTestRequest):
         latency_ms = (time.time() - start_time) * 1000
         
         if response.status_code != 200:
+            # Try to get error details
+            try:
+                error_detail = response.json().get("detail", response.text)
+            except:
+                error_detail = response.text or f"HTTP {response.status_code}"
+            
             raise HTTPException(
                 status_code=response.status_code,
-                detail=f"Error from vLLM server: {response.text}"
+                detail=f"Error from vLLM server: {error_detail}"
             )
         
         # Parse response
-        response_data = response.json()
-        content = response_data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        try:
+            response_data = response.json()
+            content = response_data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        except (ValueError, KeyError) as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Invalid response from vLLM server: {str(e)}"
+            )
         
         return DeploymentTestResponse(
             deployment_id=deployment_id,
             message=request.message,
             response=content,
-            endpoint=deployment.endpoint,
+            endpoint=deployment.endpoint,  # Return the public endpoint for display
             latency_ms=latency_ms
         )
         
     except HTTPException:
         raise
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=500, detail=f"Connection error to vLLM server: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to test deployment: {str(e)}")
 
