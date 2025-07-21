@@ -25,6 +25,11 @@ const predictionSteps = [
   { path: '/prediction/progress', label: 'Prediction Progress' },
 ];
 
+const deploySteps = [
+  { path: '/deploy/new', label: 'New Deployment' },
+  { path: '/deploy/active', label: 'Active Deployments' },
+];
+
 const navItems = [
   { icon: Home, label: 'Dashboard', path: '/' },
   { icon: Database, label: 'Data Preparation', path: '/data-preparation' },
@@ -32,7 +37,7 @@ const navItems = [
   { icon: LineChart, label: 'Evaluate', path: '/evaluate/model', subItems: evaluateSteps },
   // { icon: Target, label: 'Prediction', path: '/prediction/model-selection', subItems: predictionSteps },
   { icon: MessageSquare, label: 'Chat', path: '/query' },
-  { icon: Rocket, label: 'Deploy', path: '/deploy' },
+  { icon: Rocket, label: 'Deploy', path: '/deploy', subItems: deploySteps },
   { icon: Activity, label: 'System Monitor', path: '/monitoring' },
   { icon: Settings, label: 'Settings', path: '/settings' }, 
 ];
@@ -43,10 +48,11 @@ export function SideNav() {
   const navigate = useNavigate();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
-  // Check if current path is a training, evaluation, or prediction step
+  // Check if current path is a training, evaluation, prediction, or deploy step
   const isTrainingPath = trainSteps.some(step => step.path === pathname);
   const isEvaluationPath = evaluateSteps.some(step => step.path === pathname);
   const isPredictionPath = predictionSteps.some(step => step.path === pathname);
+  const isDeployPath = deploySteps.some(step => step.path === pathname);
   
   // Expand appropriate section based on current path
   useEffect(() => {
@@ -56,8 +62,10 @@ export function SideNav() {
       setExpandedItem('/evaluate/model');
     } else if (isPredictionPath) {
       setExpandedItem('/prediction/model-selection');
+    } else if (isDeployPath) {
+      setExpandedItem('/deploy');
     }
-  }, [pathname, isTrainingPath, isEvaluationPath, isPredictionPath]);
+  }, [pathname, isTrainingPath, isEvaluationPath, isPredictionPath, isDeployPath]);
   
   return (
     <>

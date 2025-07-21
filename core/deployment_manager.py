@@ -11,6 +11,36 @@ from dataclasses import dataclass, asdict
 import threading
 import signal
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+def get_deployment_endpoint(deployment_id: str, port: int) -> str:
+    """Generate deployment endpoint based on environment configuration"""
+    deployment_mode = os.getenv('DEPLOYMENT_MODE', 'development')
+    
+    if deployment_mode == 'production':
+        # Production: Use domain-based path routing
+        protocol = os.getenv('DEPLOYMENT_PROTOCOL', 'https')
+        domain = os.getenv('DEPLOYMENT_DOMAIN', 'deepcite.in')
+        base_url = os.getenv('DEPLOYMENT_BASE_URL')
+        
+        if base_url:
+            # Use custom base URL if provided
+            return f"{base_url}/{deployment_id}"
+        else:
+            # Use path-based routing with domain
+            return f"{protocol}://{domain}/api/deploy/{deployment_id}"
+    else:
+        # Development: Use localhost with port
+        protocol = os.getenv('DEPLOYMENT_PROTOCOL', 'http')
+        host = os.getenv('DEPLOYMENT_HOST', 'localhost')
+        return f"{protocol}://{host}:{port}"
+
+def get_health_check_url(deployment: 'DeploymentInfo') -> str:
+    """Get the URL for health checks (always use localhost for internal checks)"""
+    return f"http://localhost:{deployment.port}"
 
 @dataclass
 class DeploymentConfig:
@@ -94,13 +124,14 @@ class VLLMDeploymentManager:
             
             # Get available port
             port = self.port_manager.get_available_port()
-            endpoint = f"http://localhost:{port}"
+            
+            # Generate endpoint based on environment configuration
+            endpoint = get_deployment_endpoint(deployment_id, port)
             
             # Create deployment info
-            model_path = "finvix/966_e_qwen-2.5-1.5I-15Inv"
             deployment = DeploymentInfo(
                 deployment_id=deployment_id,
-                model_path=model_path,  # Use the model_path parameter passed to the method
+                model_path=model_path,
                 port=port,
                 status="starting",
                 endpoint=endpoint,
@@ -255,9 +286,10 @@ class VLLMDeploymentManager:
     def _check_health(self, deployment: DeploymentInfo) -> bool:
         """Check if deployment is healthy"""
         try:
-            # Try the OpenAI API endpoint to check if the server is running
+            # Use localhost URL for internal health checks (always works regardless of production/dev mode)
+            health_check_url = get_health_check_url(deployment)
             response = requests.get(
-                f"{deployment.endpoint}/v1/models",
+                f"{health_check_url}/v1/models",
                 timeout=5
             )
             is_healthy = response.status_code == 200
@@ -321,6 +353,11 @@ class VLLMDeploymentManager:
                     # Create deployment with the config
                     deployment_data['config'] = config
                     deployment = DeploymentInfo(**deployment_data)
+                    
+                    # Regenerate endpoint based on current environment configuration
+                    # This ensures endpoints are updated when switching between dev/prod
+                    deployment.endpoint = get_deployment_endpoint(deployment.deployment_id, deployment.port)
+                    
                     self.deployments[deployment.deployment_id] = deployment
                     
                     # Mark as stopped if was running (server restart)
@@ -350,9 +387,64 @@ class VLLMDeploymentManager:
             
             with open(self.deployments_file, 'w') as f:
                 json.dump(data, f, indent=2, default=str)
+            
+            # Update Nginx mapping if in production mode
+            self._update_nginx_mapping()
                 
         except Exception as e:
             print(f"Error saving deployments: {e}")
+    
+    def _update_nginx_mapping(self):
+        """Update Nginx deployment mapping file"""
+        deployment_mode = os.getenv('DEPLOYMENT_MODE', 'development')
+        
+        if deployment_mode != 'production':
+            return
+        
+        try:
+            # Generate Nginx map content
+            map_content = []
+            map_content.append("# Auto-generated deployment mapping")
+            map_content.append("# Maps deployment IDs to backend ports")
+            map_content.append(f"# Generated at: {datetime.now().isoformat()}")
+            map_content.append("")
+            
+            active_deployments = 0
+            for deployment in self.deployments.values():
+                if deployment.status == 'running':
+                    map_content.append(f"{deployment.deployment_id} {deployment.port};")
+                    active_deployments += 1
+            
+            # Add default case
+            map_content.append("default 0;")
+            map_content.append("")
+            map_content.append(f"# Total active deployments: {active_deployments}")
+            
+            # Write to temporary file first
+            temp_map_file = "deployment-map.conf"
+            with open(temp_map_file, 'w') as f:
+                f.write('\n'.join(map_content))
+            
+            # Try to update the Nginx map file
+            nginx_map_file = "/etc/nginx/deployment-map.conf"
+            try:
+                # Copy to Nginx directory (requires sudo)
+                import shutil
+                shutil.copy2(temp_map_file, nginx_map_file)
+                
+                # Reload Nginx configuration
+                subprocess.run(['sudo', 'nginx', '-t'], check=True, capture_output=True)
+                subprocess.run(['sudo', 'systemctl', 'reload', 'nginx'], check=True, capture_output=True)
+                
+                print(f"Updated Nginx mapping with {active_deployments} active deployments")
+                
+            except (subprocess.CalledProcessError, PermissionError, FileNotFoundError) as e:
+                # If we can't update Nginx automatically, just log it
+                print(f"Could not automatically update Nginx mapping: {e}")
+                print(f"Please manually run: sudo cp {temp_map_file} {nginx_map_file} && sudo nginx -t && sudo systemctl reload nginx")
+                
+        except Exception as e:
+            print(f"Error updating Nginx mapping: {e}")
     
     def get_deployment_stats(self) -> Dict[str, Any]:
         """Get deployment statistics"""

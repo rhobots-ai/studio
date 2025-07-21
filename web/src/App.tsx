@@ -11,7 +11,7 @@ import ModelQuery from './pages/ModelQuery';
 import Evaluate from './pages/evaluate';
 import MonitoringDashboard from './pages/monitoring/Dashboard';
 import Settings from './pages/Settings';
-import Deploy from './pages/Deploy';
+import Deploy from './pages/deploy';
 
 function App() {
   return (
@@ -30,7 +30,7 @@ function App() {
         <Route path="evaluate/*" element={<Evaluate />} />
         <Route path="monitoring" element={<MonitoringDashboard />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="deploy" element={<Deploy />} />
+        <Route path="deploy/*" element={<Deploy />} />
       </Route>
     </Routes>
   );
