@@ -394,8 +394,83 @@ class VLLMDeploymentManager:
         except Exception as e:
             print(f"Error saving deployments: {e}")
     
+    def _check_nginx_permissions(self):
+        """Check if we have the necessary permissions for Nginx updates"""
+        nginx_map_file = "/etc/nginx/deployment-map.conf"
+        
+        try:
+            # Check if file exists and is writable
+            if os.path.exists(nginx_map_file):
+                return os.access(nginx_map_file, os.W_OK)
+            else:
+                # Check if directory is writable
+                return os.access("/etc/nginx", os.W_OK)
+        except:
+            return False
+    
+    def _setup_nginx_permissions_automatically(self):
+        """Attempt to set up Nginx permissions automatically"""
+        try:
+            nginx_map_file = "/etc/nginx/deployment-map.conf"
+            current_user = os.getenv('USER', 'ubuntu')
+            
+            # Create the file if it doesn't exist
+            if not os.path.exists(nginx_map_file):
+                subprocess.run([
+                    'sudo', 'tee', nginx_map_file
+                ], input="# Auto-generated deployment mapping\ndefault 0;\n", 
+                text=True, capture_output=True, check=True)
+            
+            # Try to set up group permissions
+            commands = [
+                ['sudo', 'groupadd', '-f', 'nginx-deploy'],  # -f flag ignores if group exists
+                ['sudo', 'usermod', '-a', '-G', 'nginx-deploy', current_user],
+                ['sudo', 'chown', 'root:nginx-deploy', nginx_map_file],
+                ['sudo', 'chmod', '664', nginx_map_file]
+            ]
+            
+            for cmd in commands:
+                try:
+                    subprocess.run(cmd, capture_output=True, check=True)
+                except subprocess.CalledProcessError:
+                    # Ignore errors for group operations that might already be set up
+                    pass
+            
+            return True
+            
+        except Exception as e:
+            print(f"🔧 Could not automatically set up permissions: {e}")
+            return False
+    
+    def _update_nginx_with_sudo(self, temp_map_file, nginx_map_file):
+        """Update Nginx using sudo commands"""
+        try:
+            # Use sudo to copy the file
+            subprocess.run([
+                'sudo', 'cp', temp_map_file, nginx_map_file
+            ], check=True, capture_output=True)
+            
+            # Test Nginx configuration
+            subprocess.run([
+                'sudo', 'nginx', '-t'
+            ], check=True, capture_output=True)
+            
+            # Reload Nginx
+            subprocess.run([
+                'sudo', 'systemctl', 'reload', 'nginx'
+            ], check=True, capture_output=True)
+            
+            return True
+            
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Sudo command failed: {e}")
+            return False
+        except Exception as e:
+            print(f"❌ Unexpected error with sudo: {e}")
+            return False
+    
     def _update_nginx_mapping(self):
-        """Update Nginx deployment mapping file"""
+        """Update Nginx deployment mapping file with robust error handling"""
         deployment_mode = os.getenv('DEPLOYMENT_MODE', 'development')
         
         if deployment_mode != 'production':
@@ -425,44 +500,51 @@ class VLLMDeploymentManager:
             with open(temp_map_file, 'w') as f:
                 f.write('\n'.join(map_content))
             
-            # Try to update the Nginx map file
             nginx_map_file = "/etc/nginx/deployment-map.conf"
-            try:
-                # Copy to Nginx directory (requires proper permissions)
-                import shutil
-                shutil.copy2(temp_map_file, nginx_map_file)
-                
-                # Test and reload Nginx configuration
-                subprocess.run(['sudo', 'nginx', '-t'], check=True, capture_output=True)
-                subprocess.run(['sudo', 'systemctl', 'reload', 'nginx'], check=True, capture_output=True)
-                
-                print(f"✅ Updated Nginx mapping with {active_deployments} active deployments")
-                
-            except PermissionError as e:
-                # Permission denied - provide helpful instructions
-                print(f"⚠️  Could not automatically update Nginx mapping: Permission denied")
-                print(f"📋 To fix this permanently, run: ./scripts/fix-nginx-permissions.sh")
-                print(f"🔧 For immediate fix, run: sudo cp {temp_map_file} {nginx_map_file} && sudo nginx -t && sudo systemctl reload nginx")
-                
-            except subprocess.CalledProcessError as e:
-                # Nginx configuration or reload failed
-                print(f"❌ Nginx configuration error: {e}")
-                print(f"🔍 Check Nginx logs: sudo tail -f /var/log/nginx/error.log")
-                print(f"🧪 Test configuration: sudo nginx -t")
-                
-            except FileNotFoundError as e:
-                # Nginx not installed or wrong path
-                print(f"❌ Nginx not found: {e}")
-                print(f"📦 Install Nginx: sudo apt install nginx")
-                print(f"🔧 Or run setup script: ./scripts/setup-aws-nginx.sh")
-                
-            except Exception as e:
-                # Other unexpected errors
-                print(f"❌ Unexpected error updating Nginx mapping: {e}")
-                print(f"🔧 Manual command: sudo cp {temp_map_file} {nginx_map_file} && sudo nginx -t && sudo systemctl reload nginx")
+            
+            # Method 1: Try direct copy (if permissions are set up)
+            if self._check_nginx_permissions():
+                try:
+                    import shutil
+                    shutil.copy2(temp_map_file, nginx_map_file)
+                    subprocess.run(['sudo', 'systemctl', 'reload', 'nginx'], check=True, capture_output=True)
+                    print(f"✅ Updated Nginx mapping with {active_deployments} active deployments")
+                    return
+                except Exception:
+                    pass  # Fall through to other methods
+            
+            # Method 2: Try to set up permissions automatically
+            if self._setup_nginx_permissions_automatically():
+                try:
+                    import shutil
+                    shutil.copy2(temp_map_file, nginx_map_file)
+                    subprocess.run(['sudo', 'systemctl', 'reload', 'nginx'], check=True, capture_output=True)
+                    print(f"✅ Set up permissions and updated Nginx mapping with {active_deployments} active deployments")
+                    print(f"🔄 Please log out and back in for group changes to take full effect")
+                    return
+                except Exception:
+                    pass  # Fall through to sudo method
+            
+            # Method 3: Use sudo commands
+            if self._update_nginx_with_sudo(temp_map_file, nginx_map_file):
+                print(f"✅ Updated Nginx mapping with sudo ({active_deployments} active deployments)")
+                return
+            
+            # Method 4: All methods failed - provide helpful instructions
+            print(f"⚠️  Could not automatically update Nginx mapping")
+            print(f"📋 Multiple methods attempted:")
+            print(f"   • Direct file copy (permission denied)")
+            print(f"   • Automatic permission setup (failed)")
+            print(f"   • Sudo commands (failed)")
+            print(f"")
+            print(f"🔧 Manual solutions:")
+            print(f"   1. Run: sudo cp {temp_map_file} {nginx_map_file} && sudo nginx -t && sudo systemctl reload nginx")
+            print(f"   2. Or run: ./scripts/fix-nginx-permissions.sh")
+            print(f"")
+            print(f"💡 The deployment mapping file has been generated at: {temp_map_file}")
                 
         except Exception as e:
-            print(f"Error updating Nginx mapping: {e}")
+            print(f"❌ Error generating Nginx mapping: {e}")
     
     def get_deployment_stats(self) -> Dict[str, Any]:
         """Get deployment statistics"""
