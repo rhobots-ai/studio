@@ -428,20 +428,38 @@ class VLLMDeploymentManager:
             # Try to update the Nginx map file
             nginx_map_file = "/etc/nginx/deployment-map.conf"
             try:
-                # Copy to Nginx directory (requires sudo)
+                # Copy to Nginx directory (requires proper permissions)
                 import shutil
                 shutil.copy2(temp_map_file, nginx_map_file)
                 
-                # Reload Nginx configuration
+                # Test and reload Nginx configuration
                 subprocess.run(['sudo', 'nginx', '-t'], check=True, capture_output=True)
                 subprocess.run(['sudo', 'systemctl', 'reload', 'nginx'], check=True, capture_output=True)
                 
-                print(f"Updated Nginx mapping with {active_deployments} active deployments")
+                print(f"✅ Updated Nginx mapping with {active_deployments} active deployments")
                 
-            except (subprocess.CalledProcessError, PermissionError, FileNotFoundError) as e:
-                # If we can't update Nginx automatically, just log it
-                print(f"Could not automatically update Nginx mapping: {e}")
-                print(f"Please manually run: sudo cp {temp_map_file} {nginx_map_file} && sudo nginx -t && sudo systemctl reload nginx")
+            except PermissionError as e:
+                # Permission denied - provide helpful instructions
+                print(f"⚠️  Could not automatically update Nginx mapping: Permission denied")
+                print(f"📋 To fix this permanently, run: ./scripts/fix-nginx-permissions.sh")
+                print(f"🔧 For immediate fix, run: sudo cp {temp_map_file} {nginx_map_file} && sudo nginx -t && sudo systemctl reload nginx")
+                
+            except subprocess.CalledProcessError as e:
+                # Nginx configuration or reload failed
+                print(f"❌ Nginx configuration error: {e}")
+                print(f"🔍 Check Nginx logs: sudo tail -f /var/log/nginx/error.log")
+                print(f"🧪 Test configuration: sudo nginx -t")
+                
+            except FileNotFoundError as e:
+                # Nginx not installed or wrong path
+                print(f"❌ Nginx not found: {e}")
+                print(f"📦 Install Nginx: sudo apt install nginx")
+                print(f"🔧 Or run setup script: ./scripts/setup-aws-nginx.sh")
+                
+            except Exception as e:
+                # Other unexpected errors
+                print(f"❌ Unexpected error updating Nginx mapping: {e}")
+                print(f"🔧 Manual command: sudo cp {temp_map_file} {nginx_map_file} && sudo nginx -t && sudo systemctl reload nginx")
                 
         except Exception as e:
             print(f"Error updating Nginx mapping: {e}")
