@@ -5,8 +5,7 @@ import { Badge } from '../components/ui/Badge';
 import { Progress } from '../components/ui/Progress';
 import { AnimatedLoader } from '../components/ui/AnimatedLoader';
 import { API_BASE_URL_WITH_API } from '../config/api';
-import { Server, RefreshCw, Play, XCircle, Pause, Terminal } from 'lucide-react';
-import { DeployModelsGrid, DeployModelInfo } from '../components/deployment/DeployModelsGrid';
+import { Server, RefreshCw, Play, XCircle, Pause, Terminal, Settings, Download, ChevronDown, Clock, Search } from 'lucide-react';
 import { DeploymentCard } from '../components/deployment/DeploymentCard';
 import deploymentService, { DeploymentConfig } from '../services/deploymentService';
 
@@ -40,7 +39,14 @@ export default function Deploy() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedModelId, setSelectedModelId] = useState('');
-  const [availableModels, setAvailableModels] = useState<DeployModelInfo[]>([]);
+  const [availableModels, setAvailableModels] = useState<any[]>([]);
+  const [modelSource, setModelSource] = useState<'fine-tuned' | 'huggingface'>('fine-tuned');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [temperature, setTemperature] = useState(0.7);
+  const [maxTokens, setMaxTokens] = useState(256);
+  const [systemPrompt, setSystemPrompt] = useState('');
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+  const [selectedModelInfo, setSelectedModelInfo] = useState<any>(null);
   const [isDeploying, setIsDeploying] = useState(false);
   const [deploymentConfig, setDeploymentConfig] = useState<DeploymentConfig>({
     gpu_memory_utilization: 0.8,
@@ -85,25 +91,27 @@ export default function Deploy() {
       const hfResponse = await fetch(`${API_BASE_URL_WITH_API}/models/huggingface`);
       const hfData = await hfResponse.json();
       
-      // Convert to DeployModelInfo format
-      const localModelInfos: DeployModelInfo[] = localData.models.map((model: any) => ({
+      // Process models
+      const localModelInfos = localData.models.map((model: any) => ({
+        ...model,
         id: model.path || model.id,
         name: model.name,
         description: model.description || `Local model at ${model.path}`,
         size: model.size || 'Unknown',
         architecture: model.architecture || 'Custom',
         creationDate: model.created_at,
-        isBase: false,
+        type: 'fine-tuned',
         path: model.path
       }));
       
-      const hfModelInfos: DeployModelInfo[] = hfData.models.map((model: any) => ({
+      const hfModelInfos = hfData.models.map((model: any) => ({
+        ...model,
         id: model.id,
         name: model.name,
         description: model.description || model.name,
         size: model.size || 'Unknown',
         architecture: model.architecture || 'HuggingFace',
-        isBase: true,
+        type: 'huggingface',
         path: model.hf_model_id
       }));
       
@@ -112,15 +120,30 @@ export default function Deploy() {
       setAvailableModels(combinedModels);
       
       // Set default model if none selected
-      if (!selectedModel && combinedModels.length > 0) {
-        setSelectedModel(combinedModels[0].path);
-        setSelectedModelId(combinedModels[0].id);
+      if (!selectedModel && localModelInfos.length > 0) {
+        setSelectedModel(localModelInfos[0].path);
+        setSelectedModelId(localModelInfos[0].id);
+        setSelectedModelInfo(localModelInfos[0]);
       }
     } catch (error) {
       console.error('Failed to fetch models:', error);
     }
   };
 
+  // Load a model
+  const loadModel = () => {
+    if (!selectedModel) {
+      alert('Please select a model to load');
+      return;
+    }
+    
+    // Find the selected model info
+    const modelInfo = availableModels.find(model => model.path === selectedModel);
+    if (modelInfo) {
+      setSelectedModelInfo(modelInfo);
+    }
+  };
+  
   // Deploy a model
   const deployModel = async () => {
     if (!selectedModel) {
@@ -138,7 +161,12 @@ export default function Deploy() {
         },
         body: JSON.stringify({
           model_path: selectedModel,
-          config: deploymentConfig
+          config: {
+            ...deploymentConfig,
+            temperature: temperature,
+            max_tokens: maxTokens,
+            system_prompt: systemPrompt
+          }
         })
       });
       
@@ -387,161 +415,183 @@ export default function Deploy() {
         </div>
       )}
 
-      {/* Deploy New Model */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Deploy New Model</CardTitle>
+      {/* Deploy New Model Card */}
+      <Card className="max-w-md shadow-md">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl">Deploy New Model</CardTitle>
           <CardDescription>
             Select a model and configure deployment settings
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                Select Model
-              </h3>
-              
-              <DeployModelsGrid 
-                models={availableModels}
-                onSelectModel={(model) => {
-                  setSelectedModel(model.path);
-                  setSelectedModelId(model.id);
-                }}
-                selectedModelId={selectedModelId}
-              />
-              
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Custom Model Path (optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g., microsoft/phi-3-mini-4k-instruct"
-                  value={selectedModel}
-                  onChange={(e) => {
-                    setSelectedModel(e.target.value);
-                    setSelectedModelId('');
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Enter a HuggingFace model ID or local path
-                </p>
-              </div>
+        <CardContent className="pt-0">
+          <div className="mb-6">
+            <div className="flex w-full rounded-md overflow-hidden border border-gray-200 dark:border-gray-700 mb-6">
+              <button 
+                className={`flex-1 py-2 px-4 text-center text-sm font-medium ${modelSource === 'fine-tuned' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-white dark:bg-gray-800'}`}
+                onClick={() => setModelSource('fine-tuned')}
+              >
+                Fine-tuned Models
+              </button>
+              <button 
+                className={`flex-1 py-2 px-4 text-center text-sm font-medium ${modelSource === 'huggingface' ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300' : 'bg-white dark:bg-gray-800'}`}
+                onClick={() => setModelSource('huggingface')}
+              >
+                🤗 Hugging Face
+              </button>
             </div>
             
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Deployment Configuration
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    GPU Memory Utilization (0.1-1.0)
-                  </label>
-                  <input
-                    type="number"
-                    min="0.1"
-                    max="1.0"
-                    step="0.1"
-                    value={deploymentConfig.gpu_memory_utilization}
-                    onChange={(e) => setDeploymentConfig({
-                      ...deploymentConfig,
-                      gpu_memory_utilization: parseFloat(e.target.value)
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Max Model Length
-                  </label>
-                  <input
-                    type="number"
-                    min="512"
-                    step="512"
-                    value={deploymentConfig.max_model_len}
-                    onChange={(e) => setDeploymentConfig({
-                      ...deploymentConfig,
-                      max_model_len: parseInt(e.target.value)
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Tensor Parallel Size
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={deploymentConfig.tensor_parallel_size}
-                    onChange={(e) => setDeploymentConfig({
-                      ...deploymentConfig,
-                      tensor_parallel_size: parseInt(e.target.value)
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">
-                    Data Type
-                  </label>
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium mb-2">Primary Model</h3>
+                <div className="relative">
                   <select
-                    value={deploymentConfig.dtype}
-                    onChange={(e) => setDeploymentConfig({
-                      ...deploymentConfig,
-                      dtype: e.target.value
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    value={selectedModel}
+                    onChange={(e) => {
+                      setSelectedModel(e.target.value);
+                      const model = availableModels.find(m => m.path === e.target.value);
+                      if (model) {
+                        setSelectedModelId(model.id);
+                        setSelectedModelInfo(model);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none"
                   >
-                    <option value="auto">auto</option>
-                    <option value="half">half (fp16)</option>
-                    <option value="float16">float16</option>
-                    <option value="bfloat16">bfloat16</option>
-                    <option value="float">float (fp32)</option>
+                    <option value="">-- Select a model --</option>
+                    {availableModels
+                      .filter(model => model.type === modelSource)
+                      .map(model => (
+                        <option key={model.path} value={model.path}>
+                          {model.name}
+                        </option>
+                      ))}
                   </select>
+                  <ChevronDown className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
                 </div>
                 
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="trust_remote_code"
-                    checked={deploymentConfig.trust_remote_code}
-                    onChange={(e) => setDeploymentConfig({
-                      ...deploymentConfig,
-                      trust_remote_code: e.target.checked
-                    })}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                  />
-                  <label htmlFor="trust_remote_code" className="ml-2 block text-xs text-gray-500">
-                    Trust Remote Code
-                  </label>
+                <Button
+                  variant="primary"
+                  className="w-full mt-4"
+                  onClick={loadModel}
+                  disabled={!selectedModel}
+                >
+                  Load Model
+                </Button>
+                
+                <div className="flex items-center gap-2 mt-3 text-xs text-gray-500">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>{selectedModelInfo ? 'Model loaded' : 'No model loaded'}</span>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 flex justify-end">
-            <Button
-              variant="primary"
-              onClick={deployModel}
-              disabled={isDeploying || !selectedModel}
-            >
-              {isDeploying ? (
-                <>
-                  <AnimatedLoader variant="dots" size="sm" />
-                  Deploying...
-                </>
-              ) : (
-                <>Deploy Model</>
+              
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-sm font-medium mb-4">Parameters</h3>
+                
+                <div className="space-y-5">
+                  <div>
+                    <div className="flex justify-between mb-1.5">
+                      <span className="text-xs">Temperature</span>
+                      <span className="text-xs font-medium">{temperature.toFixed(1)}</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={temperature}
+                        onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                      />
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Precise</span>
+                        <span>Creative</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between mb-1.5">
+                      <span className="text-xs">Max Tokens</span>
+                      <span className="text-xs font-medium">{maxTokens}</span>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="16"
+                        max="4096"
+                        step="16"
+                        value={maxTokens}
+                        onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+                        className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button 
+                  className="flex items-center justify-between w-full text-left text-sm font-medium py-1"
+                  onClick={() => setShowSystemPrompt(!showSystemPrompt)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span>System Prompt</span>
+                  </div>
+                  <ChevronDown className={`h-4 w-4 transition-transform ${showSystemPrompt ? 'rotate-180' : ''}`} />
+                </button>
+                
+                {showSystemPrompt && (
+                  <textarea
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    placeholder="Enter a system prompt..."
+                    className="w-full mt-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-xs focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[80px]"
+                  />
+                )}
+              </div>
+              
+              {selectedModelInfo && (
+                <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <h3 className="text-sm font-medium mb-2">Selected Model Info</h3>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-gray-500">Size:</span> {selectedModelInfo.size}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">Type:</span> {selectedModelInfo.type === 'fine-tuned' ? 'Fine-tuned' : 'Base Model'}
+                    </div>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-3"
+                    leftIcon={<Download className="h-3.5 w-3.5" />}
+                  >
+                    Download Model
+                  </Button>
+                </div>
               )}
-            </Button>
+              
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={deployModel}
+                  disabled={isDeploying || !selectedModelInfo}
+                >
+                  {isDeploying ? (
+                    <>
+                      <AnimatedLoader variant="dots" size="sm" />
+                      Deploying...
+                    </>
+                  ) : (
+                    <>Deploy Model</>
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -97,6 +97,7 @@ class VLLMDeploymentManager:
             endpoint = f"http://localhost:{port}"
             
             # Create deployment info
+            model_path = "finvix/966_e_qwen-2.5-1.5I-15Inv"
             deployment = DeploymentInfo(
                 deployment_id=deployment_id,
                 model_path=model_path,
