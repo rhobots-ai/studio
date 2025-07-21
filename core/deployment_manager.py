@@ -98,9 +98,10 @@ class VLLMDeploymentManager:
             
             # Create deployment info
             model_path = "finvix/966_e_qwen-2.5-1.5I-15Inv"
+
             deployment = DeploymentInfo(
                 deployment_id=deployment_id,
-                model_path=model_path,
+                model_path=model_path,  # Use the model_path parameter passed to the method
                 port=port,
                 status="starting",
                 endpoint=endpoint,
@@ -134,9 +135,9 @@ class VLLMDeploymentManager:
             return
         
         try:
-            # Build vLLM command
+            # Build vLLM command using python module approach instead of direct command
             cmd = [
-                "vllm", "serve", deployment.model_path,
+                "python3", "-m", "vllm", "serve", deployment.model_path,
                 "--port", str(deployment.port),
                 "--host", "localhost",
                 "--gpu-memory-utilization", str(deployment.config.gpu_memory_utilization),
