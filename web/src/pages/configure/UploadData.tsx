@@ -335,7 +335,7 @@ export const UploadData: React.FC = () => {
             {filteredDatasets.map(dataset => (
               <div
                 key={dataset.dataset_id}
-                className={`cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border-2 ${
+                className={`cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border-2 bg-white ${
                   selectedDataset?.dataset_id === dataset.dataset_id 
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
                     : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'

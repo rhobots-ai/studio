@@ -59,6 +59,33 @@ export default function TrainingSession() {
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(0);
 
+  // Normalize backend session object to frontend format
+  function normalizeSessionData(raw: any): TrainingSessionData {
+    return {
+      session_id: raw.id || raw.session_id,
+      status: raw.status,
+      config: {
+        model_name: raw.trainer_config?.model_name || raw.merged_config?.model_name || '',
+        num_train_epochs: raw.training_args_config?.num_train_epochs || raw.merged_config?.num_train_epochs || 0,
+        per_device_train_batch_size: raw.training_args_config?.per_device_train_batch_size || raw.merged_config?.per_device_train_batch_size || 0,
+        ...raw.training_args_config,
+        ...raw.trainer_config,
+        ...raw.merged_config,
+      },
+      dataset_info: {
+        total_rows: raw.dataset_info?.total_examples || 0,
+        file_type: raw.dataset_info?.file_type || '',
+        ...raw.dataset_info,
+      },
+      created_at: raw.created_at,
+      started_at: raw.started_at,
+      completed_at: raw.completed_at,
+      progress: raw.progress,
+      logs: raw.logs || [],
+      error: raw.error,
+    };
+  }
+
   // Function to fetch session data from the API
   const fetchSessionData = async (): Promise<void> => {
     if (!sessionId) return;
@@ -73,7 +100,7 @@ export default function TrainingSession() {
         throw new Error(`Error fetching session data: ${response.statusText}`);
       }
       const data = await response.json();
-      setSessionData(data);
+      setSessionData(normalizeSessionData(data));
       setError(null);
     } catch (error) {
       console.error('Failed to fetch session data:', error);

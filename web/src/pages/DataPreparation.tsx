@@ -205,7 +205,7 @@ export const DataPreparation: React.FC = () => {
   };
 
   const DatasetCard: React.FC<{ dataset: ProcessedDataset }> = ({ dataset }) => (
-    <div className="cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300">
+    <div className="cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 bg-white">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">

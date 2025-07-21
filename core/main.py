@@ -44,6 +44,7 @@ from api.routes.file_routes import router as file_router
 from api.routes.dataset_routes import router as dataset_router
 from api.routes.prediction_routes import router as prediction_router
 from api.routes.evaluation_routes import router as evaluation_router
+from api.routes.deployment_routes import router as deployment_router
 from core.websocket_manager import websocket_manager, connection_cleanup_task
 
 # Lifespan function to manage startup and shutdown
@@ -110,6 +111,9 @@ app.include_router(prediction_router)
 
 # Include evaluation router
 app.include_router(evaluation_router)
+
+# Include deployment router
+app.include_router(deployment_router)
 
 # Store training jobs status
 training_jobs: Dict[str, Dict[str, Any]] = {}

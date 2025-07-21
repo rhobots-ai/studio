@@ -731,7 +731,7 @@ export default function ConfigureParameters() {
         learning_rate: parameters.learningRate,
         per_device_train_batch_size: parameters.batchSize,
         logging_steps: parameters.loggingSteps,
-        lora_r: trainingConfig.lora_rank,
+        lora_rank: trainingConfig.lora_rank,
         lora_alpha: trainingConfig.lora_alpha,
         lora_dropout: trainingConfig.lora_dropout,
         lr_scheduler_type: trainingConfig.lr_scheduler_type,
