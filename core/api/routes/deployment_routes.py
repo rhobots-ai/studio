@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 import json
 
-from core.deployment_manager import deployment_manager, DeploymentConfig
+from deployment_manager import deployment_manager, DeploymentConfig
 
 router = APIRouter()
 
