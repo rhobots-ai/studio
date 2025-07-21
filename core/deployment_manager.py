@@ -320,6 +320,12 @@ class VLLMDeploymentManager:
                     data = json.load(f)
                 
                 for deployment_data in data:
+                    # Handle config separately to ensure it's a DeploymentConfig instance
+                    config_data = deployment_data.pop('config', {})
+                    config = DeploymentConfig(**config_data)
+                    
+                    # Create deployment with the config
+                    deployment_data['config'] = config
                     deployment = DeploymentInfo(**deployment_data)
                     self.deployments[deployment.deployment_id] = deployment
                     
@@ -339,9 +345,13 @@ class VLLMDeploymentManager:
         try:
             data = []
             for deployment in self.deployments.values():
-                # Convert to dict, handling dataclass
+                # Make a copy of the deployment to avoid modifying the original
                 deployment_dict = asdict(deployment)
-                deployment_dict['config'] = asdict(deployment.config)
+                
+                # Handle the config separately to ensure it's properly serialized
+                if isinstance(deployment.config, DeploymentConfig):
+                    deployment_dict['config'] = asdict(deployment.config)
+                
                 data.append(deployment_dict)
             
             with open(self.deployments_file, 'w') as f:
