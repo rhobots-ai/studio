@@ -58,7 +58,7 @@ class TrainingArgsConfig(BaseModel):
     save_steps: int = Field(default=500, ge=1, description="Number of steps between model saves")
     seed: int = Field(default=42, description="Random seed for reproducibility")
     remove_unused_columns: bool = Field(default=True, description="Remove unused columns from dataset")
-    report_to: List[str] = Field(default_factory=list, description="Logging services to report to")
+    report_to: str = Field(default="none", description="Logging service to report to")
     output_dir: str = Field(default="./results", description="Output directory for model and logs")
     
     # Custom Training Arguments
@@ -109,7 +109,7 @@ class EnhancedFinetuneRequest(BaseModel):
                     "save_steps": 500,
                     "seed": 42,
                     "remove_unused_columns": True,
-                    "report_to": [],
+                    "report_to": "",
                     "output_dir": "./results/my-fine-tuned-model",
                     "custom_training_arguments": {}
                 }

@@ -12,7 +12,6 @@ import time
 
 # Import the model manager for loading models
 from model_manager import model_manager
-from model_manager import VLLMResponder
 
 # Import prediction service for model management
 from services.prediction_service import prediction_service
@@ -20,6 +19,8 @@ from services.prediction_service import prediction_service
 # Import enhanced JSON parser and VLLM response handler
 from enhanced_json_parser import EnhancedJSONParser
 from vllm_response_handler import vllm_response_handler
+# Import the new remote API responder
+from remote_api_responder import RemoteAPIResponder
 
 # Store evaluation jobs status
 evaluation_jobs: Dict[str, Dict[str, Any]] = {}
@@ -78,7 +79,10 @@ class EvaluationService:
             #Todo
             model_path = f"finvix/{model_name}"
             # model_path = "finvix/prediction_model_v2"
-            vllm_engine = VLLMResponder(model_path=model_path)
+            
+            # Use RemoteAPIResponder instead of VLLMResponder for reliable predictions
+            print(f"Initializing Remote API responder for model: {model_path}")
+            vllm_engine = RemoteAPIResponder(model_path=model_path)
             results = []
             total_rows = len(test_data)
 
