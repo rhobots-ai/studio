@@ -10,7 +10,7 @@
       </h3>
    </div>
 
-   <span>RHStudio uses <a href="https://github.com/orgs/rhobots-ai/discussions"><strong>Github Discussions</strong></a>  for Support and Feature Requests.</span>
+   <span>Rhobots Studio uses <a href="https://github.com/orgs/rhobots-ai/discussions"><strong>Github Discussions</strong></a>  for Support and Feature Requests.</span>
    <br/>
    <br/>
    <div>
@@ -29,18 +29,18 @@
 </p>
 
 <h3 align="center">
-RHStudio – Fine-Tune. Evaluate. Deploy. All in One Open Platform.
+Rhobots Studio – Fine-Tune. Evaluate. Deploy. All in One Open Platform.
 </h3>
 
-RHStudio is an open-source platform for curating datasets, fine-tuning language models, evaluating performance, and running inference—all in one unified interface.
-Whether you're a researcher or a developer, RHStudio simplifies and accelerates the entire LLM lifecycle.
-RHStudio can be **self-hosted in minutes**.
+Rhobots Studio is an open-source platform for curating datasets, fine-tuning language models, evaluating performance, and running inference—all in one unified interface.
+Whether you're a researcher or a developer, Rhobots Studio simplifies and accelerates the entire LLM lifecycle.
+Rhobots Studio can be **self-hosted in minutes**.
 
-## 📦 Deploy RHStudio
+## 📦 Deploy Rhobots Studio
 
-### Self-Host RHStudio
+### Self-Host Rhobots Studio
 
-Run RHStudio on your own machine in 5 minutes using Docker Compose.
+Run Rhobots Studio on your own machine in 5 minutes using Docker Compose.
 
   ```bash
   # Get a copy of the latest Langfuse repository
