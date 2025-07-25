@@ -88,10 +88,10 @@ export function SideNav() {
               {/* Header */}
               <div className="p-4">
                 <div className="flex items-center gap-3 mb-8">
-                  <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-                    <BarChart3 className="h-5 w-5 text-white" />
+                  <div className="w-8 h-8 bg-primary-50 dark:bg-primary-900/20 rounded-lg flex items-center justify-center">
+                    <img src={"images/icon.svg"} alt={"Rhobots"}/>
                   </div>
-                  <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">LaaP Studio</h1>
+                  <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Rhobots Studio</h1>
                 </div>
                 
                 <nav className="space-y-1">
