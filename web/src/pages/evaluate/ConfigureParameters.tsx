@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { cn } from '../../utils/cn';
-import { Settings, ArrowRight, ArrowLeft, CheckCircle, AlertTriangle, Upload, Download, Plus, X, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { Settings, ArrowRight, ArrowLeft, CheckCircle, AlertTriangle, Upload, Download, Plus, X, FileText, ChevronDown, ChevronUp, Edit } from 'lucide-react';
 import { useEvaluateContext } from './EvaluateContext';
 import { evaluationService } from '../../services/evaluationService';
+import { JsonEditorModal } from '../../components/ui/JsonEditorModal';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -29,6 +30,9 @@ export default function ConfigureParameters() {
   const [showBasicParams, setShowBasicParams] = useState(true);
   const [showModelParams, setShowModelParams] = useState(true);
   const [showCustomParams, setShowCustomParams] = useState(true);
+  
+  // JSON Editor Modal state
+  const [isJsonEditorModalOpen, setIsJsonEditorModalOpen] = useState(false);
 
   // Helper function to handle input focus - select all text for easy replacement
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -129,6 +133,63 @@ export default function ConfigureParameters() {
     if (value === 'true' || value === 'false') return 'boolean';
     if (!isNaN(Number(value)) && value.trim() !== '') return 'number';
     return 'string';
+  };
+
+  // JSON Editor Modal handlers
+  const handleJsonEditorApply = (config: any) => {
+    try {
+      // Apply evaluation parameters
+      if (config.evaluation_parameters) {
+        if (config.evaluation_parameters.batchSize) dispatch({ type: 'SET_BATCH_SIZE', payload: config.evaluation_parameters.batchSize });
+        if (config.evaluation_parameters.maxTokens) dispatch({ type: 'SET_MAX_TOKENS', payload: config.evaluation_parameters.maxTokens });
+        if (config.evaluation_parameters.temperature) dispatch({ type: 'SET_TEMPERATURE', payload: config.evaluation_parameters.temperature });
+      } else {
+        // Direct parameters format
+        if (config.batchSize || config.batch_size) dispatch({ type: 'SET_BATCH_SIZE', payload: config.batchSize || config.batch_size });
+        if (config.maxTokens || config.max_tokens) dispatch({ type: 'SET_MAX_TOKENS', payload: config.maxTokens || config.max_tokens });
+        if (config.temperature) dispatch({ type: 'SET_TEMPERATURE', payload: config.temperature });
+      }
+
+      // Handle custom parameters
+      if (config.custom_parameters) {
+        const loadedCustomParams = Object.entries(config.custom_parameters).map(([key, value], index) => ({
+          id: `editor_${Date.now()}_${index}`,
+          key,
+          value: String(value),
+          type: detectParameterType(String(value))
+        }));
+        setCustomParameters(loadedCustomParams);
+      }
+
+      toast.success('Configuration applied successfully!');
+    } catch (error: any) {
+      toast.error('Failed to apply configuration: ' + error.message);
+    }
+  };
+
+  // Get current configuration for JSON editor
+  const getCurrentConfig = () => {
+    return {
+      evaluation_parameters: {
+        batchSize: state.batchSize,
+        maxTokens: state.maxTokens,
+        temperature: state.temperature
+      },
+      custom_parameters: customParameters.reduce((acc, param) => {
+        let value: any = param.value;
+        if (param.type === 'number') {
+          value = parseFloat(param.value);
+        } else if (param.type === 'boolean') {
+          value = param.value === 'true';
+        }
+        acc[param.key] = value;
+        return acc;
+      }, {} as Record<string, any>),
+      metadata: {
+        name: 'Evaluation Configuration',
+        version: '1.0'
+      }
+    };
   };
 
   const handleBack = () => {
@@ -311,93 +372,23 @@ export default function ConfigureParameters() {
         
         <div className="lg:col-span-3 h-full flex flex-col">
           <div className="space-y-6">
-            {/* Quick Configuration - JSON Import/Export */}
+            {/* Parameters Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5" />
-                    <span>Quick Configuration</span>
+                    <Settings className="h-5 w-5" />
+                    <span>Evaluation Parameters</span>
                   </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowJsonImport(!showJsonImport)}
-                      leftIcon={<Upload className="h-4 w-4" />}
-                    >
-                      Import JSON
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleJsonExport}
-                      leftIcon={<Download className="h-4 w-4" />}
-                    >
-                      Export JSON
-                    </Button>
-                  </div>
-                </CardTitle>
-                <CardDescription>
-                  Import configuration from JSON or export current settings
-                </CardDescription>
-              </CardHeader>
-              {showJsonImport && (
-                <CardContent>
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="space-y-4"
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    leftIcon={<Edit className="h-4 w-4" />}
+                    onClick={() => setIsJsonEditorModalOpen(true)}
+                    className="text-blue-600 border-blue-300 hover:bg-blue-50 hover:border-blue-400 dark:text-blue-400 dark:border-blue-600 dark:hover:bg-blue-900/20 dark:hover:border-blue-500"
                   >
-                    <div>
-                      <label htmlFor="jsonImport" className="block text-sm font-medium mb-2">
-                        Paste Configuration JSON
-                      </label>
-                      <textarea
-                        id="jsonImport"
-                        value={jsonImportText}
-                        onChange={(e) => setJsonImportText(e.target.value)}
-                        className="w-full h-32 rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                        placeholder='{"evaluation_parameters": {"batchSize": 50, "maxTokens": 150, "temperature": 0.7}}'
-                      />
-                      {jsonImportError && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
-                          {jsonImportError}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex space-x-3">
-                      <Button
-                        variant="primary"
-                        onClick={handleJsonImport}
-                        disabled={!jsonImportText.trim()}
-                      >
-                        Import & Apply
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setJsonImportText('');
-                          setJsonImportError(null);
-                          setShowJsonImport(false);
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </motion.div>
-                </CardContent>
-              )}
-            </Card>
-
-            {/* Parameters Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Settings className="h-5 w-5" />
-                  <span>Evaluation Parameters</span>
+                    Open in Editor
+                  </Button>
                 </CardTitle>
                 <CardDescription>
                   Configure evaluation settings and parameters
@@ -735,6 +726,17 @@ export default function ConfigureParameters() {
           </Card>
         </div>
       </div>
+
+      {/* JSON Editor Modal */}
+      <JsonEditorModal
+        isOpen={isJsonEditorModalOpen}
+        onClose={() => setIsJsonEditorModalOpen(false)}
+        title="Evaluation Configuration Editor"
+        description="Edit evaluation parameters in JSON format"
+        currentConfig={getCurrentConfig()}
+        onApply={handleJsonEditorApply}
+        placeholder="Paste your evaluation configuration JSON here..."
+      />
     </div>
   );
 }
