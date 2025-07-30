@@ -77,8 +77,9 @@ class EvaluationService:
             # print(f"Model loaded successfully for job {job_id}")
             model_name = os.path.basename(model_path)
             #Todo
-            model_path = f"finvix/{model_name}"
+            # model_path = f"finvix/{model_name}"
             # model_path = "finvix/prediction_model_v2"
+            model_path = "LaaP-ai/qwen-base-invoicev1.01-1.5B"
             
             # Use RemoteAPIResponder instead of VLLMResponder for reliable predictions
             print(f"Initializing Remote API responder for model: {model_path}")
