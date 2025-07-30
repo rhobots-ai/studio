@@ -205,7 +205,7 @@ export const DataPreparation: React.FC = () => {
   };
 
   const DatasetCard: React.FC<{ dataset: ProcessedDataset }> = ({ dataset }) => (
-    <div className="cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300">
+    <div className="cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 bg-white">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
@@ -525,133 +525,6 @@ export const DataPreparation: React.FC = () => {
         </div>
       )}
 
-      {/* Data Preparation Guide */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">
-            Data Preparation Guide
-          </CardTitle>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Best practices for preparing your training data
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Data Types */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Data Types</h3>
-            <div className="space-y-4">
-              <div className="flex items-start space-x-3">
-                <div className="bg-blue-100 dark:bg-blue-900 p-2 rounded-lg">
-                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">Structured Data</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    CSV, Excel files with clear column headers
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <div className="bg-green-100 dark:bg-green-900 p-2 rounded-lg">
-                  <Database className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100">JSON/JSONL Data</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Flexible format for complex data structures
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Preparation Tips */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-3 flex items-center">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              Preparation Tips
-            </h4>
-            <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">•</span>
-                Ensure your data has clear instruction and output columns
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">•</span>
-                Remove or handle missing values appropriately
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">•</span>
-                Consider data quality vs. quantity trade-offs
-              </li>
-              <li className="flex items-start">
-                <span className="text-blue-600 mr-2">•</span>
-                Test with a small sample before full processing
-              </li>
-            </ul>
-          </div>
-
-          {/* Quality Checklist */}
-          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">
-            <h4 className="font-medium text-green-900 dark:text-green-100 mb-3 flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2" />
-              Quality Checklist
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-              <div className="flex items-center text-green-800 dark:text-green-200">
-                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                Consistent data format
-              </div>
-              <div className="flex items-center text-green-800 dark:text-green-200">
-                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                Clear column headers
-              </div>
-              <div className="flex items-center text-green-800 dark:text-green-200">
-                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                No duplicate entries
-              </div>
-              <div className="flex items-center text-green-800 dark:text-green-200">
-                <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
-                Balanced data distribution
-              </div>
-            </div>
-          </div>
-
-          {/* Recommended Workflow */}
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-              <Target className="h-5 w-5 mr-2" />
-              Recommended Workflow
-            </h4>
-            <div className="space-y-3">
-              <div className="flex items-center">
-                <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">1</div>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Upload & Validate:</strong> Check file format and structure
-                </span>
-              </div>
-              <div className="flex items-center">
-                <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">2</div>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Map Columns:</strong> Define instruction, input, and output mappings
-                </span>
-              </div>
-              <div className="flex items-center">
-                <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">3</div>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Preview & Test:</strong> Review sample data and processing results
-                </span>
-              </div>
-              <div className="flex items-center">
-                <div className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold mr-3">4</div>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  <strong>Save & Use:</strong> Save dataset for training or evaluation
-                </span>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Recent Activity */}
       {datasets.length > 0 && (
@@ -723,64 +596,198 @@ export const DataPreparation: React.FC = () => {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Upload className="h-5 w-5 mr-2" />
-            Upload Training Data
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="text-center">
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Upload your training data file in any supported format
-            </p>
-            
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8">
-            <input
-              type="file"
-              accept=".csv,.json,.jsonl,.xlsx,.xls,.pkl,.pickle"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleFileUpload(file);
-                }
-              }}
-              className="hidden"
-              id="file-upload"
-              disabled={isLoading}
-            />
-              <label
-                htmlFor="file-upload"
-                className={`cursor-pointer flex flex-col items-center ${
-                  isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <Upload className="h-12 w-12 text-gray-400 mb-4" />
-                <span className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                  {isLoading ? 'Uploading...' : 'Choose file to upload'}
-                </span>
-                <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                  Supports CSV, JSON, JSONL, Excel, and Pickle files
-                </span>
-              </label>
-            </div>
-          </div>
+      {/* Two Column Layout: Upload Section and Data Preparation Guide */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Upload Section - Takes up 8 columns */}
+        <div className="col-span-8">
+          <Card className="h-fit">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Upload Training Data
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Upload your training data file in any supported format
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center">
+                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8">
+                  <input
+                    type="file"
+                    accept=".csv,.json,.jsonl,.xlsx,.xls,.pkl,.pickle"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleFileUpload(file);
+                      }
+                    }}
+                    className="hidden"
+                    id="file-upload"
+                    disabled={isLoading}
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className={`cursor-pointer flex flex-col items-center ${
+                      isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    <Upload className="h-12 w-12 text-gray-400 mb-4" />
+                    <span className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                      {isLoading ? 'Uploading...' : 'Choose file to upload'}
+                    </span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      Supports CSV, JSON, JSONL, Excel, and Pickle files
+                    </span>
+                  </label>
+                </div>
+              </div>
 
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-              Supported File Formats:
-            </h4>
-            <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• <strong>CSV:</strong> Comma-separated values with column headers</li>
-              <li>• <strong>JSON:</strong> Array of objects or single object</li>
-              <li>• <strong>JSONL:</strong> JSON Lines format (one JSON object per line)</li>
-              <li>• <strong>Excel:</strong> .xlsx and .xls files (first sheet will be used)</li>
-              <li>• <strong>Pickle:</strong> .pkl and .pickle files containing pandas DataFrames</li>
-            </ul>
-          </div>
-        </CardContent>
-      </Card>
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                  Supported File Formats:
+                </h4>
+                <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                  <li>• <strong>CSV:</strong> Comma-separated values with column headers</li>
+                  <li>• <strong>JSON:</strong> Array of objects or single object</li>
+                  <li>• <strong>JSONL:</strong> JSON Lines format (one JSON object per line)</li>
+                  <li>• <strong>Excel:</strong> .xlsx and .xls files (first sheet will be used)</li>
+                  <li>• <strong>Pickle:</strong> .pkl and .pickle files containing pandas DataFrames</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Data Preparation Guide Card - Takes up 4 columns */}
+        <div className="col-span-4">
+          <Card className="h-fit">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                Data Preparation Guide
+              </CardTitle>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Best practices for preparing your training data
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Data Types */}
+              <div>
+                <h3 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-3">Data Types</h3>
+                <div className="space-y-3">
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-blue-100 dark:bg-blue-900 p-1.5 rounded">
+                      <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">Structured Data</h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        CSV, Excel files with clear column headers
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-3">
+                    <div className="bg-green-100 dark:bg-green-900 p-1.5 rounded">
+                      <Database className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100">JSON/JSONL Data</h4>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                        Flexible format for complex data structures
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preparation Tips */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center">
+                  <AlertCircle className="h-4 w-4 mr-2 text-blue-600" />
+                  Preparation Tips
+                </h4>
+                <ul className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    Ensure your data has clear instruction and output columns
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    Remove or handle missing values appropriately
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    Consider data quality vs. quantity trade-offs
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-blue-600 mr-2">•</span>
+                    Test with a small sample before full processing
+                  </li>
+                </ul>
+              </div>
+
+              {/* Quality Checklist */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center">
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+                  Quality Checklist
+                </h4>
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center text-gray-700 dark:text-gray-300">
+                    <CheckCircle className="h-3 w-3 mr-2 text-green-600" />
+                    Consistent data format
+                  </div>
+                  <div className="flex items-center text-gray-700 dark:text-gray-300">
+                    <CheckCircle className="h-3 w-3 mr-2 text-green-600" />
+                    Clear column headers
+                  </div>
+                  <div className="flex items-center text-gray-700 dark:text-gray-300">
+                    <CheckCircle className="h-3 w-3 mr-2 text-green-600" />
+                    No duplicate entries
+                  </div>
+                  <div className="flex items-center text-gray-700 dark:text-gray-300">
+                    <CheckCircle className="h-3 w-3 mr-2 text-green-600" />
+                    Balanced data distribution
+                  </div>
+                </div>
+              </div>
+
+              {/* Recommended Workflow */}
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2 flex items-center">
+                  <Target className="h-4 w-4 mr-2 text-purple-600" />
+                  Recommended Workflow
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-start">
+                    <div className="bg-blue-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold mr-2 mt-0.5 flex-shrink-0">1</div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">
+                      <strong>Upload & Validate:</strong> Check file format and structure
+                    </span>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="bg-blue-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold mr-2 mt-0.5 flex-shrink-0">2</div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">
+                      <strong>Map Columns:</strong> Define instruction, input, and output mappings
+                    </span>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="bg-blue-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold mr-2 mt-0.5 flex-shrink-0">3</div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">
+                      <strong>Preview & Test:</strong> Review sample data and processing results
+                    </span>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="bg-blue-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs font-bold mr-2 mt-0.5 flex-shrink-0">4</div>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">
+                      <strong>Save & Use:</strong> Save dataset for training or evaluation
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 
@@ -1168,7 +1175,7 @@ export const DataPreparation: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl px-4 py-8">
+    <div className="max-w-7xl px-4 py-8">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentView}

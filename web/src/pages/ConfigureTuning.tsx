@@ -348,7 +348,7 @@ export default function ConfigureTuning() {
       output_dir: `./results/${parameters.modelName}`,
       
       // LoRA Configuration
-      lora_r: trainingConfig.lora_rank,
+      lora_rank: trainingConfig.lora_rank,
       lora_alpha: trainingConfig.lora_alpha,
       lora_dropout: trainingConfig.lora_dropout,
       

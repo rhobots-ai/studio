@@ -62,16 +62,38 @@ export default function Dashboard() {
     }
   };
 
+  // Normalize backend session object to frontend format
+  function normalizeSession(raw: any): TrainingSession {
+    return {
+      id: raw.id,
+      status: raw.status,
+      config: {
+        model_name: raw.trainer_config?.model_name || raw.merged_config?.model_name || '',
+        num_train_epochs: raw.training_args_config?.num_train_epochs || raw.merged_config?.num_train_epochs || 0,
+        learning_rate: raw.training_args_config?.learning_rate || raw.merged_config?.learning_rate || 0,
+      },
+      dataset_info: {
+        total_rows: raw.dataset_info?.total_examples || 0,
+        file_type: raw.dataset_info?.file_type || '',
+      },
+      created_at: raw.created_at,
+      started_at: raw.started_at,
+      completed_at: raw.completed_at,
+      progress: raw.progress,
+    };
+  }
+
   // Fetch all training sessions
   const fetchSessions = async () => {
     try {
       const response = await fetch(`${API_BASE_URL_WITH_API}/training/sessions`);
       if (response.ok) {
         const data = await response.json();
-        setAllSessions(data.sessions);
-        
+        const normalizedSessions = data.sessions.map(normalizeSession);
+        setAllSessions(normalizedSessions);
+
         // Filter active sessions
-        const active = data.sessions.filter((session: TrainingSession) => 
+        const active = normalizedSessions.filter((session: TrainingSession) =>
           ['queued', 'running', 'initializing'].includes(session.status)
         );
         setActiveSessions(active);
