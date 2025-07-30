@@ -63,7 +63,7 @@ class EvaluationService:
     
     def _process_prediction_job(self, job_id: str, model_path: str, test_data: List[Dict], batch_size: int, mapping: Dict[str, Any] = None):
         """Process prediction job in background thread with batch inference and column mapping support"""
-        batch_size = 20
+        batch_size = batch_size
         try:
             self.jobs[job_id]["status"] = "running"
             self.jobs[job_id]["started_at"] = datetime.now().isoformat()
