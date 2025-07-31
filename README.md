@@ -39,11 +39,10 @@ Rhobots Studio can be **self-hosted in minutes**.
 ## 🎥 Introduction to Rhobots Studio
 
 <div align="center">
-  <a href="https://youtu.be/-oODQSd9rLk" target="_blank">
-    <img src="https://img.youtube.com/vi/-oODQSd9rLk/0.jpg" alt="Watch Introduction to Rhobots Studio" style="width:560px;height:315px;border:2px solid #ff0000;border-radius:8px;">
-  </a>
-  <br>
-  <strong>🎬 Click to Play Video</strong>
+  <video controls>
+    <source src="web/public/videos/rhobots_studio_intr.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
 </div>
 
 *Watch this introduction video to see Rhobots Studio in action - from dataset preparation to model fine-tuning, evaluation, and deployment.*
