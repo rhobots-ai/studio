@@ -36,6 +36,16 @@ Rhobots Studio is an open-source platform for curating datasets, fine-tuning lan
 Whether you're a researcher or a developer, Rhobots Studio simplifies and accelerates the entire LLM lifecycle.
 Rhobots Studio can be **self-hosted in minutes**.
 
+## 🎥 Introduction to Rhobots Studio
+
+<div align="center">
+  <iframe width="560" height="315" src="https://www.youtube.com/embed/-oODQSd9rLk" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+
+*Watch this introduction video to see Rhobots Studio in action - from dataset preparation to model fine-tuning, evaluation, and deployment.*
+
+---
+
 ## 📦 Deploy Rhobots Studio
 
 ### Self-Host Rhobots Studio
