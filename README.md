@@ -39,7 +39,7 @@ Rhobots Studio can be **self-hosted in minutes**.
 ## 🎥 Introduction to Rhobots Studio
 
 <div align="center">
-  <video controls>
+  <video width="560" height="315" controls>
     <source src="web/public/videos/rhobots_studio_intr.mp4" type="video/mp4">
     Your browser does not support the video tag.
   </video>
