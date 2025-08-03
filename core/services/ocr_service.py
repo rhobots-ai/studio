@@ -12,6 +12,8 @@ from pdf2image import convert_from_path
 import logging
 import json
 
+logger = logging.getLogger(__name__)
+
 # Import PaddleOCR with headless server support
 try:
     # Set environment variables for headless operation
@@ -36,8 +38,6 @@ except Exception as e:
     PADDLEOCR_AVAILABLE = False
     PaddleOCR = None
     logger.error(f"PaddleOCR initialization failed: {e}")
-
-logger = logging.getLogger(__name__)
 
 class PaddleOCRService:
     def __init__(self):
