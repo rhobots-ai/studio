@@ -20,3 +20,6 @@ pytz
 psutil
 GPUtil
 websockets
+# PDF text extraction
+PyMuPDF
+Pillow

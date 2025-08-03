@@ -421,6 +421,131 @@ class ModelManager:
                 "response": ""
             }
 
+    def is_model_loaded(self) -> bool:
+        """Check if a model is currently loaded"""
+        return self.current_model is not None and self.current_tokenizer is not None
+
+    async def generate_response_async(self, 
+                                    message: str, 
+                                    max_tokens: int = 150, 
+                                    temperature: float = 0.7,
+                                    do_sample: bool = True,
+                                    system_prompt: Optional[str] = None) -> Dict[str, Any]:
+        """Async wrapper for generate_response"""
+        import asyncio
+        
+        # Run the synchronous method in a thread pool
+        loop = asyncio.get_event_loop()
+        
+        # If system prompt is provided, prepend it to the message
+        if system_prompt:
+            formatted_message = f"{system_prompt}\n\n{message}"
+        else:
+            formatted_message = message
+        
+        result = await loop.run_in_executor(
+            None, 
+            self.generate_response, 
+            formatted_message, 
+            max_tokens, 
+            temperature, 
+            do_sample
+        )
+        return result
+
+    async def generate_streaming_response(self, 
+                                        message: str, 
+                                        max_tokens: int = 150, 
+                                        temperature: float = 0.7,
+                                        do_sample: bool = True,
+                                        system_prompt: Optional[str] = None):
+        """Async generator for streaming responses"""
+        import asyncio
+        
+        if self.current_model is None or self.current_tokenizer is None:
+            yield {
+                "status": "error",
+                "message": "No model currently loaded. Please load a model first.",
+                "token": "",
+                "done": True
+            }
+            return
+        
+        try:
+            # If system prompt is provided, prepend it to the message
+            if system_prompt:
+                formatted_message = f"{system_prompt}\n\n{message}"
+            else:
+                formatted_message = message
+            
+            # Format the prompt
+            prompt = f"### Instruction:\n{formatted_message}\n\n### Response:\n"
+            
+            # Tokenize
+            inputs = self.current_tokenizer(
+                prompt, 
+                return_tensors="pt",
+                truncation=True,
+                max_length=2048
+            )
+            
+            # Get model device and move inputs to the same device
+            model_device = self._get_model_device()
+            inputs = {key: value.to(model_device) for key, value in inputs.items()}
+            
+            # Create streamer
+            streamer = TextIteratorStreamer(
+                self.current_tokenizer, 
+                timeout=10.0, 
+                skip_prompt=True, 
+                skip_special_tokens=True
+            )
+            
+            # Generation parameters
+            generation_kwargs = {
+                **inputs,
+                "max_new_tokens": max_tokens,
+                "temperature": temperature,
+                "do_sample": do_sample,
+                "pad_token_id": self.current_tokenizer.eos_token_id,
+                "eos_token_id": self.current_tokenizer.eos_token_id,
+                "streamer": streamer
+            }
+            
+            # Start generation in a separate thread
+            thread = Thread(target=self.current_model.generate, kwargs=generation_kwargs)
+            thread.start()
+            
+            # Stream tokens as they are generated
+            generated_text = ""
+            for new_text in streamer:
+                if new_text:
+                    generated_text += new_text
+                    yield {
+                        "status": "streaming",
+                        "token": new_text,
+                        "generated_text": generated_text,
+                        "done": False
+                    }
+                    # Small delay to prevent overwhelming the client
+                    await asyncio.sleep(0.01)
+            
+            # Signal completion
+            yield {
+                "status": "completed",
+                "token": "",
+                "generated_text": generated_text,
+                "done": True
+            }
+            
+        except Exception as e:
+            yield {
+                "status": "error",
+                "message": f"Error generating response: {str(e)}",
+                "token": "",
+                "done": True
+            }
+
 
     def generate_response_using_vllm(self, 
                         model_path:str,
