@@ -7,12 +7,21 @@ import os
 import tempfile
 import uuid
 from typing import Tuple, Optional
-from PIL import Image
+from PIL import Image, ImageEnhance, ImageFilter
 import pytesseract
-import cv2
-import numpy as np
 from pdf2image import convert_from_path
 import logging
+
+# Try to import OpenCV, but make it optional for headless environments
+try:
+    import cv2
+    import numpy as np
+    OPENCV_AVAILABLE = True
+except ImportError as e:
+    OPENCV_AVAILABLE = False
+    cv2 = None
+    np = None
+    logging.warning(f"OpenCV not available: {e}. Using Pillow-only image processing.")
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +63,7 @@ class OCRService:
             extracted_texts = []
             for i, image in enumerate(images):
                 # Preprocess image for better OCR
-                processed_image = self._preprocess_image(np.array(image))
+                processed_image = self._preprocess_image_pil(image)
                 
                 # Extract text using Tesseract
                 text = pytesseract.image_to_string(
@@ -78,33 +87,67 @@ class OCRService:
     def _extract_from_image(self, image_path: str) -> Tuple[bool, str, str]:
         """Extract text from image file"""
         try:
-            # Load image
-            image = cv2.imread(image_path)
-            if image is None:
-                return False, "", "Could not load image file"
-            
-            # Preprocess image for better OCR
-            processed_image = self._preprocess_image(image)
-            
-            # Extract text using Tesseract
-            text = pytesseract.image_to_string(
-                processed_image, 
-                config='--oem 3 --psm 6'
-            )
-            
-            if text.strip():
-                return True, text.strip(), ""
-            else:
-                return False, "", "No text could be extracted from the image"
+            # Load image using Pillow
+            with Image.open(image_path) as image:
+                # Preprocess image for better OCR
+                processed_image = self._preprocess_image_pil(image)
+                
+                # Extract text using Tesseract
+                text = pytesseract.image_to_string(
+                    processed_image, 
+                    config='--oem 3 --psm 6'
+                )
+                
+                if text.strip():
+                    return True, text.strip(), ""
+                else:
+                    return False, "", "No text could be extracted from the image"
                 
         except Exception as e:
             logger.error(f"Image OCR failed: {str(e)}")
             return False, "", f"Image processing failed: {str(e)}"
     
+    def _preprocess_image_pil(self, image: Image.Image) -> Image.Image:
+        """
+        Preprocess image using Pillow to improve OCR accuracy
+        """
+        try:
+            # Convert to grayscale if needed
+            if image.mode != 'L':
+                gray = image.convert('L')
+            else:
+                gray = image
+            
+            # Enhance contrast
+            enhancer = ImageEnhance.Contrast(gray)
+            enhanced = enhancer.enhance(1.5)
+            
+            # Apply sharpening filter
+            sharpened = enhanced.filter(ImageFilter.SHARPEN)
+            
+            # Optional: Apply median filter to reduce noise
+            denoised = sharpened.filter(ImageFilter.MedianFilter(size=3))
+            
+            return denoised
+            
+        except Exception as e:
+            logger.warning(f"Image preprocessing failed, using original: {str(e)}")
+            return image
+    
     def _preprocess_image(self, image: np.ndarray) -> np.ndarray:
         """
-        Preprocess image to improve OCR accuracy
+        Preprocess image to improve OCR accuracy (OpenCV version - fallback)
         """
+        if not OPENCV_AVAILABLE:
+            # If OpenCV is not available, convert to PIL and use PIL preprocessing
+            try:
+                pil_image = Image.fromarray(image)
+                processed_pil = self._preprocess_image_pil(pil_image)
+                return np.array(processed_pil)
+            except Exception as e:
+                logger.warning(f"Fallback preprocessing failed: {str(e)}")
+                return image
+        
         try:
             # Convert to grayscale if needed
             if len(image.shape) == 3:

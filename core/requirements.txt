@@ -24,4 +24,4 @@ websockets
 pytesseract
 Pillow
 pdf2image
-opencv-python
+# opencv-python  # Optional - will fallback to Pillow-only processing if not available
