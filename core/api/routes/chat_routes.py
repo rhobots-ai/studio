@@ -335,6 +335,198 @@ async def quick_chat(q: str, max_tokens: int = 256, temperature: float = 0.7):
         logger.error(f"Quick chat failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Quick chat failed: {str(e)}")
 
+@router.post("/upload-document-structured")
+async def upload_document_with_structured_extraction(file: UploadFile = File(...)):
+    """
+    Upload a document and extract structured data with bounding boxes and confidence scores
+    """
+    try:
+        # Validate file type
+        allowed_types = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file.content_type}. Allowed types: PDF, JPG, PNG"
+            )
+        
+        # Generate unique file ID
+        file_id = str(uuid.uuid4())
+        
+        # Create temporary file
+        temp_dir = tempfile.mkdtemp()
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        temp_file_path = os.path.join(temp_dir, f"{file_id}{file_extension}")
+        
+        # Save uploaded file
+        with open(temp_file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # Validate file
+        is_valid, validation_error = ocr_service.validate_file(temp_file_path)
+        if not is_valid:
+            # Clean up temp file
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+            
+            raise HTTPException(status_code=400, detail=validation_error)
+        
+        # Get file info
+        file_info = ocr_service.get_file_info(temp_file_path)
+        
+        # Extract file type for OCR
+        file_type = file_extension[1:]  # Remove the dot
+        
+        # Perform structured OCR
+        logger.info(f"Starting structured OCR processing for file: {file.filename}")
+        success, structured_data, error_message = ocr_service.extract_structured_data(temp_file_path, file_type)
+        
+        # Clean up temp file
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        if os.path.exists(temp_dir):
+            os.rmdir(temp_dir)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Structured OCR processing failed: {error_message}")
+        
+        # Store document info with structured data
+        document_info = {
+            'file_id': file_id,
+            'original_filename': file.filename,
+            'file_type': file_type,
+            'file_info': file_info,
+            'structured_data': structured_data,
+            'ocr_text': structured_data.get('combined_text', '') if 'combined_text' in structured_data else structured_data.get('text', ''),
+            'upload_time': datetime.now().isoformat(),
+            'content_type': file.content_type,
+            'extraction_type': 'structured'
+        }
+        
+        uploaded_documents[file_id] = document_info
+        
+        logger.info(f"Structured OCR processing completed for file: {file.filename}")
+        
+        return {
+            'success': True,
+            'fileId': file_id,
+            'file_id': file_id,
+            'structuredData': structured_data,
+            'structured_data': structured_data,
+            'message': f'Document "{file.filename}" processed with structured extraction',
+            'file_info': file_info,
+            'total_blocks': structured_data.get('total_blocks', 0) if 'total_blocks' in structured_data else sum(page.get('total_blocks', 0) for page in structured_data.get('pages', []))
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Structured document upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Structured document upload failed: {str(e)}")
+
+@router.post("/extract-invoice-fields")
+async def extract_invoice_fields_from_upload(file: UploadFile = File(...)):
+    """
+    Upload a document and extract common invoice fields (invoice_no, date, GSTIN, amount)
+    """
+    try:
+        # Validate file type
+        allowed_types = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file.content_type}. Allowed types: PDF, JPG, PNG"
+            )
+        
+        # Generate unique file ID
+        file_id = str(uuid.uuid4())
+        
+        # Create temporary file
+        temp_dir = tempfile.mkdtemp()
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        temp_file_path = os.path.join(temp_dir, f"{file_id}{file_extension}")
+        
+        # Save uploaded file
+        with open(temp_file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # Validate file
+        is_valid, validation_error = ocr_service.validate_file(temp_file_path)
+        if not is_valid:
+            # Clean up temp file
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+            
+            raise HTTPException(status_code=400, detail=validation_error)
+        
+        # Get file info
+        file_info = ocr_service.get_file_info(temp_file_path)
+        
+        # Extract file type for OCR
+        file_type = file_extension[1:]  # Remove the dot
+        
+        # Perform invoice field extraction
+        logger.info(f"Starting invoice field extraction for file: {file.filename}")
+        success, invoice_data, error_message = ocr_service.extract_invoice_fields(temp_file_path, file_type)
+        
+        # Clean up temp file
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        if os.path.exists(temp_dir):
+            os.rmdir(temp_dir)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail=f"Invoice field extraction failed: {error_message}")
+        
+        # Store document info with invoice data
+        document_info = {
+            'file_id': file_id,
+            'original_filename': file.filename,
+            'file_type': file_type,
+            'file_info': file_info,
+            'invoice_data': invoice_data,
+            'upload_time': datetime.now().isoformat(),
+            'content_type': file.content_type,
+            'extraction_type': 'invoice_fields'
+        }
+        
+        uploaded_documents[file_id] = document_info
+        
+        logger.info(f"Invoice field extraction completed for file: {file.filename}")
+        
+        # Format extracted fields for easy access
+        extracted_fields = {}
+        for field_name, field_data in invoice_data.items():
+            if field_data and field_name != 'raw_fields':
+                if isinstance(field_data, dict) and 'value' in field_data:
+                    extracted_fields[field_name] = field_data['value']
+                else:
+                    extracted_fields[field_name] = field_data
+        
+        return {
+            'success': True,
+            'fileId': file_id,
+            'file_id': file_id,
+            'invoiceData': invoice_data,
+            'invoice_data': invoice_data,
+            'extractedFields': extracted_fields,
+            'extracted_fields': extracted_fields,
+            'message': f'Invoice fields extracted from "{file.filename}"',
+            'file_info': file_info,
+            'fields_found': len([f for f in extracted_fields.values() if f is not None])
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Invoice field extraction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Invoice field extraction failed: {str(e)}")
+
 @router.get("/documents")
 async def list_uploaded_documents():
     """
@@ -342,14 +534,31 @@ async def list_uploaded_documents():
     """
     documents = []
     for file_id, doc_info in uploaded_documents.items():
-        documents.append({
+        document_summary = {
             'file_id': file_id,
             'filename': doc_info['original_filename'],
             'file_type': doc_info['file_type'],
             'upload_time': doc_info['upload_time'],
-            'text_length': len(doc_info['ocr_text']),
+            'extraction_type': doc_info.get('extraction_type', 'basic'),
             'file_info': doc_info['file_info']
-        })
+        }
+        
+        # Add type-specific information
+        if doc_info.get('extraction_type') == 'structured':
+            structured_data = doc_info.get('structured_data', {})
+            document_summary['total_blocks'] = structured_data.get('total_blocks', 0) if 'total_blocks' in structured_data else sum(page.get('total_blocks', 0) for page in structured_data.get('pages', []))
+            document_summary['text_length'] = len(structured_data.get('combined_text', '') if 'combined_text' in structured_data else structured_data.get('text', ''))
+        elif doc_info.get('extraction_type') == 'invoice_fields':
+            invoice_data = doc_info.get('invoice_data', {})
+            extracted_fields = {k: v['value'] if isinstance(v, dict) and 'value' in v else v 
+                              for k, v in invoice_data.items() 
+                              if v and k != 'raw_fields'}
+            document_summary['fields_extracted'] = len([f for f in extracted_fields.values() if f is not None])
+            document_summary['extracted_fields'] = extracted_fields
+        else:
+            document_summary['text_length'] = len(doc_info.get('ocr_text', ''))
+    
+        documents.append(document_summary)
     
     return {
         'success': True,

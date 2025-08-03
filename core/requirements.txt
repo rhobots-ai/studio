@@ -20,8 +20,8 @@ pytz
 psutil
 GPUtil
 websockets
-# OCR dependencies
-pytesseract
+# OCR dependencies - PaddleOCR (no system dependencies needed)
+paddlepaddle
+paddleocr
 Pillow
 pdf2image
-# opencv-python  # Optional - will fallback to Pillow-only processing if not available
