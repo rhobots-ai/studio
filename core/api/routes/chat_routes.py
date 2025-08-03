@@ -13,7 +13,7 @@ from datetime import datetime
 import asyncio
 import logging
 
-from services.ocr_service import ocr_service
+from services.pdf_text_service import text_service as ocr_service
 from model_manager import model_manager
 
 logger = logging.getLogger(__name__)

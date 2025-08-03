@@ -20,10 +20,6 @@ pytz
 psutil
 GPUtil
 websockets
-# OCR dependencies - PaddleOCR (headless version for servers)
-paddlepaddle
-paddleocr
+# PDF text extraction
+PyMuPDF
 Pillow
-pdf2image
-# System dependencies for headless servers
-opencv-python-headless

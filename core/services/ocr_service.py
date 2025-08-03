@@ -139,34 +139,65 @@ class PaddleOCRService:
             return False, {}, f"Invoice field extraction failed: {str(e)}"
     
     def _extract_from_pdf(self, pdf_path: str) -> Tuple[bool, str, str]:
-        """Extract text from PDF file using PaddleOCR"""
+        """Extract text from PDF file using PaddleOCR with improved processing"""
         try:
-            # Convert PDF to images
-            images = convert_from_path(pdf_path, dpi=300)
+            # Convert PDF to images with higher DPI and better settings
+            logger.info(f"Converting PDF to images: {pdf_path}")
+            images = convert_from_path(
+                pdf_path, 
+                dpi=300,  # High DPI for better text quality
+                first_page=1,
+                last_page=None,
+                fmt='PNG',
+                thread_count=1,
+                userpw=None,
+                use_cropbox=False,
+                strict=False
+            )
+            
+            logger.info(f"PDF converted to {len(images)} images")
             
             extracted_texts = []
             for i, image in enumerate(images):
-                # Save image temporarily for PaddleOCR
-                with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_img:
-                    image.save(temp_img.name, 'PNG')
+                try:
+                    # Enhance image quality before OCR
+                    # Convert to RGB if needed
+                    if image.mode != 'RGB':
+                        image = image.convert('RGB')
                     
-                    # Extract text using PaddleOCR
-                    result = self.ocr.ocr(temp_img.name)
-                    
-                    # Clean up temp file
-                    os.unlink(temp_img.name)
-                    
-                    # Process OCR results
-                    page_text = self._process_ocr_result(result)
-                    
-                    if page_text.strip():
-                        extracted_texts.append(f"--- Page {i+1} ---\n{page_text.strip()}")
+                    # Save image temporarily for PaddleOCR with better quality
+                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_img:
+                        # Save with high quality
+                        image.save(temp_img.name, 'PNG', optimize=False, quality=95)
+                        
+                        logger.info(f"Processing page {i+1} with OCR")
+                        
+                        # Extract text using PaddleOCR
+                        result = self.ocr.ocr(temp_img.name)
+                        
+                        # Clean up temp file
+                        os.unlink(temp_img.name)
+                        
+                        # Process OCR results
+                        page_text = self._process_ocr_result(result)
+                        
+                        logger.info(f"Page {i+1} extracted {len(page_text)} characters")
+                        
+                        if page_text.strip():
+                            extracted_texts.append(f"--- Page {i+1} ---\n{page_text.strip()}")
+                        else:
+                            logger.warning(f"No text extracted from page {i+1}")
+                            
+                except Exception as page_error:
+                    logger.error(f"Error processing page {i+1}: {str(page_error)}")
+                    continue
             
             if extracted_texts:
                 full_text = "\n\n".join(extracted_texts)
+                logger.info(f"Total extracted text length: {len(full_text)} characters")
                 return True, full_text, ""
             else:
-                return False, "", "No text could be extracted from the PDF"
+                return False, "", "No text could be extracted from any page of the PDF"
                 
         except Exception as e:
             logger.error(f"PDF OCR failed: {str(e)}")
