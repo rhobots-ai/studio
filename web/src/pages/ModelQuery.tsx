@@ -6,6 +6,8 @@ import { Badge } from '../components/ui/Badge';
 import { motion } from 'framer-motion';
 import { chatApi, Model } from '../services/chatApi';
 import { AnimatedLoader } from '../components/ui/AnimatedLoader';
+import { FileUploadButton } from '../components/ui/FileUploadButton';
+import { UploadedFilePreview } from '../components/ui/UploadedFilePreview';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -40,6 +42,13 @@ export default function ModelQuery() {
   const [maxTokens, setMaxTokens] = useState(256);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [copySuccess, setCopySuccess] = useState<{[key: string]: boolean}>({});
+  
+  // File upload state
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [fileUploadStatus, setFileUploadStatus] = useState<'uploading' | 'processing' | 'completed' | 'error'>('completed');
+  const [ocrText, setOcrText] = useState<string>('');
+  const [fileId, setFileId] = useState<string>('');
+  const [uploadError, setUploadError] = useState<string>('');
   
   // System Prompt state
   const [systemPrompt, setSystemPrompt] = useState('');
@@ -344,6 +353,40 @@ export default function ModelQuery() {
     setSystemPromptEnabled(!systemPromptEnabled);
   };
 
+  // File upload handlers
+  const handleFileSelect = async (file: File) => {
+    setUploadedFile(file);
+    setFileUploadStatus('uploading');
+    setUploadError('');
+    setOcrText('');
+    setFileId('');
+
+    try {
+      const response = await chatApi.uploadDocumentForChat(file);
+      
+      if (response.success) {
+        setFileId(response.fileId);
+        setOcrText(response.ocrText);
+        setFileUploadStatus('completed');
+      } else {
+        setFileUploadStatus('error');
+        setUploadError(response.error || 'Upload failed');
+      }
+    } catch (error: any) {
+      console.error('File upload error:', error);
+      setFileUploadStatus('error');
+      setUploadError(error.message || 'Upload failed');
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFile(null);
+    setFileUploadStatus('completed');
+    setOcrText('');
+    setFileId('');
+    setUploadError('');
+  };
+
   // Load available models on component mount
   useEffect(() => {
     loadModels();
@@ -403,35 +446,70 @@ export default function ModelQuery() {
         })
       };
 
-      // Use streaming chat API
-      await chatApi.streamChat(
-        prompt,
-        chatParams,
-        // onChunk callback - update message content as chunks arrive
-        (chunk: string) => {
-          setMessages(prev => 
-            prev.map((msg, idx) => 
-              idx === messageIndex ? { ...msg, content: msg.content + chunk } : msg
-            )
-          );
-        },
-        // onComplete callback
-        () => {
-          console.log('Streaming completed for model:', model.name);
-        },
-        // onError callback
-        (error: Error) => {
-          console.error('Streaming error for model:', model.name, error);
-          setMessages(prev => 
-            prev.map((msg, idx) => 
-              idx === messageIndex ? { 
-                ...msg, 
-                content: msg.content + '\n\n[Error: Failed to get response from model. Please try again.]'
-              } : msg
-            )
-          );
-        }
-      );
+      // Check if we have an uploaded document with OCR text
+      if (uploadedFile && ocrText && fileUploadStatus === 'completed') {
+        // Use document-aware chat API
+        await chatApi.streamChatWithDocument(
+          prompt,
+          fileId,
+          ocrText,
+          chatParams,
+          // onChunk callback - update message content as chunks arrive
+          (chunk: string) => {
+            setMessages(prev => 
+              prev.map((msg, idx) => 
+                idx === messageIndex ? { ...msg, content: msg.content + chunk } : msg
+              )
+            );
+          },
+          // onComplete callback
+          () => {
+            console.log('Streaming completed for model:', model.name);
+          },
+          // onError callback
+          (error: Error) => {
+            console.error('Streaming error for model:', model.name, error);
+            setMessages(prev => 
+              prev.map((msg, idx) => 
+                idx === messageIndex ? { 
+                  ...msg, 
+                  content: msg.content + '\n\n[Error: Failed to get response from model. Please try again.]'
+                } : msg
+              )
+            );
+          }
+        );
+      } else {
+        // Use regular streaming chat API
+        await chatApi.streamChat(
+          prompt,
+          chatParams,
+          // onChunk callback - update message content as chunks arrive
+          (chunk: string) => {
+            setMessages(prev => 
+              prev.map((msg, idx) => 
+                idx === messageIndex ? { ...msg, content: msg.content + chunk } : msg
+              )
+            );
+          },
+          // onComplete callback
+          () => {
+            console.log('Streaming completed for model:', model.name);
+          },
+          // onError callback
+          (error: Error) => {
+            console.error('Streaming error for model:', model.name, error);
+            setMessages(prev => 
+              prev.map((msg, idx) => 
+                idx === messageIndex ? { 
+                  ...msg, 
+                  content: msg.content + '\n\n[Error: Failed to get response from model. Please try again.]'
+                } : msg
+              )
+            );
+          }
+        );
+      }
     } catch (error) {
       console.error('Failed to generate response:', error);
       setMessages(prev => 
@@ -1052,26 +1130,49 @@ export default function ModelQuery() {
               </div>
             </CardContent>
             <CardFooter className="border-t p-4">
-              <div className="w-full relative">
-                <textarea
-                  value={inputValue}
-                  onChange={(e) => setInputValue(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type your message..."
-                  rows={3}
-                  className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-                  disabled={isGenerating}
-                />
-                <Button
-                  variant="primary"
-                  size="sm"
-                  disabled={!inputValue.trim() || isGenerating}
-                  isLoading={isGenerating}
-                  onClick={handleSendMessage}
-                  className="absolute bottom-3 right-3 w-8 h-8 p-0"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+              <div className="w-full space-y-3">
+                {/* File Upload Preview */}
+                {uploadedFile && (
+                  <UploadedFilePreview
+                    file={uploadedFile}
+                    ocrStatus={fileUploadStatus}
+                    ocrText={ocrText}
+                    error={uploadError}
+                    onRemove={handleRemoveFile}
+                  />
+                )}
+                
+                {/* Chat Input */}
+                <div className="relative">
+                  <textarea
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={uploadedFile ? "Ask about your document..." : "Type your message..."}
+                    rows={3}
+                    className="w-full rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 pr-20 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+                    disabled={isGenerating}
+                  />
+                  
+                  {/* Upload and Send buttons */}
+                  <div className="absolute bottom-3 right-3 flex items-center gap-1">
+                    <FileUploadButton
+                      onFileSelect={handleFileSelect}
+                      disabled={isGenerating || fileUploadStatus === 'uploading' || fileUploadStatus === 'processing'}
+                      className="h-8 w-8"
+                    />
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={!inputValue.trim() || isGenerating}
+                      isLoading={isGenerating}
+                      onClick={handleSendMessage}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             </CardFooter>
           </Card>

@@ -32,6 +32,14 @@ export interface StreamChunk {
   done: boolean;
 }
 
+export interface DocumentUploadResponse {
+  success: boolean;
+  fileId: string;
+  ocrText: string;
+  message: string;
+  error?: string;
+}
+
 export interface ApiError {
   message: string;
   status?: number;
@@ -514,6 +522,74 @@ class ChatApiService {
       }
     } catch (error) {
       console.error('Stream chat error:', error);
+      onError(error as Error);
+    }
+  }
+
+  async uploadDocumentForChat(file: File): Promise<DocumentUploadResponse> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch(`${API_BASE_URL_WITH_API}/chat/upload-document`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let errorMessage;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || 'Failed to upload document';
+        } catch {
+          errorMessage = `Upload failed (${response.status}): ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return {
+        success: data.success || true,
+        fileId: data.fileId || data.file_id || '',
+        ocrText: data.ocrText || data.ocr_text || '',
+        message: data.message || 'Document uploaded successfully',
+        error: data.error
+      };
+    } catch (error: any) {
+      console.error('Failed to upload document:', error);
+      return {
+        success: false,
+        fileId: '',
+        ocrText: '',
+        message: 'Upload failed',
+        error: error.message || 'Unknown error occurred'
+      };
+    }
+  }
+
+  async streamChatWithDocument(
+    message: string,
+    fileId: string,
+    ocrText: string,
+    params: Partial<ChatParams> = {},
+    onChunk: (chunk: string) => void,
+    onComplete: () => void,
+    onError: (error: Error) => void
+  ): Promise<void> {
+    try {
+      // Enhanced message with document context
+      const enhancedMessage = `Based on this document content:\n\n${ocrText}\n\n${message}`;
+      
+      // Use the existing streamChat method with enhanced message
+      await this.streamChat(
+        enhancedMessage,
+        params,
+        onChunk,
+        onComplete,
+        onError
+      );
+    } catch (error) {
+      console.error('Failed to stream chat with document:', error);
       onError(error as Error);
     }
   }

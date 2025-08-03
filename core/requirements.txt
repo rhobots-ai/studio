@@ -20,3 +20,8 @@ pytz
 psutil
 GPUtil
 websockets
+# OCR dependencies
+pytesseract
+Pillow
+pdf2image
+opencv-python
