@@ -625,7 +625,7 @@ async def extract_invoice_with_trained_model(file: UploadFile = File(...)):
         # Get the model's response
         model_output = model_response.get('response', '')
         
-        # Try to parse the JSON response from the model
+        # Try to parse the JSON response from the model with enhanced cleaning
         try:
             # The model should return pure JSON, but let's handle potential formatting issues
             model_output_clean = model_output.strip()
@@ -638,17 +638,104 @@ async def extract_invoice_with_trained_model(file: UploadFile = File(...)):
             
             model_output_clean = model_output_clean.strip()
             
-            # Parse the JSON
-            extracted_fields = json.loads(model_output_clean)
+            # Extract only the JSON part (stop at first complete JSON object)
+            import re
+            
+            # Find the first JSON object in the response
+            json_match = re.search(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}', model_output_clean)
+            if json_match:
+                json_part = json_match.group(0)
+                
+                # Clean up common JSON formatting issues
+                # Remove double commas
+                json_part = re.sub(r',,+', ',', json_part)
+                # Remove trailing commas before closing braces
+                json_part = re.sub(r',\s*}', '}', json_part)
+                # Remove trailing commas before closing brackets
+                json_part = re.sub(r',\s*]', ']', json_part)
+                
+                logger.info(f"Cleaned JSON: {json_part}")
+                
+                # Parse the cleaned JSON
+                extracted_fields = json.loads(json_part)
+                
+            else:
+                # If no JSON pattern found, try the original approach
+                # Clean up common issues in the full response
+                cleaned_response = re.sub(r',,+', ',', model_output_clean)
+                cleaned_response = re.sub(r',\s*}', '}', cleaned_response)
+                cleaned_response = re.sub(r',\s*]', ']', cleaned_response)
+                
+                # Try to find just the JSON part by looking for { and stopping at the first }
+                start_idx = cleaned_response.find('{')
+                if start_idx != -1:
+                    # Find the matching closing brace
+                    brace_count = 0
+                    end_idx = start_idx
+                    for i, char in enumerate(cleaned_response[start_idx:], start_idx):
+                        if char == '{':
+                            brace_count += 1
+                        elif char == '}':
+                            brace_count -= 1
+                            if brace_count == 0:
+                                end_idx = i + 1
+                                break
+                    
+                    json_part = cleaned_response[start_idx:end_idx]
+                    logger.info(f"Extracted JSON part: {json_part}")
+                    extracted_fields = json.loads(json_part)
+                else:
+                    raise json.JSONDecodeError("No JSON object found", model_output_clean, 0)
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse model JSON response: {model_output}")
-            # Return the raw response if JSON parsing fails
-            extracted_fields = {
-                "error": "Failed to parse model response as JSON",
-                "raw_response": model_output,
-                "parse_error": str(e)
-            }
+            
+            # Try one more time with aggressive cleaning
+            try:
+                # Extract anything that looks like JSON key-value pairs
+                import re
+                
+                # Find all key-value pairs in the response
+                kv_pattern = r'"([^"]+)"\s*:\s*("[^"]*"|\d+\.?\d*|true|false|null)'
+                matches = re.findall(kv_pattern, model_output)
+                
+                if matches:
+                    # Reconstruct JSON from found key-value pairs
+                    json_obj = {}
+                    for key, value in matches:
+                        try:
+                            # Try to parse the value
+                            if value.startswith('"') and value.endswith('"'):
+                                json_obj[key] = value[1:-1]  # Remove quotes
+                            elif value.lower() in ['true', 'false']:
+                                json_obj[key] = value.lower() == 'true'
+                            elif value.lower() == 'null':
+                                json_obj[key] = None
+                            else:
+                                # Try to parse as number
+                                if '.' in value:
+                                    json_obj[key] = float(value)
+                                else:
+                                    json_obj[key] = int(value)
+                        except:
+                            json_obj[key] = value
+                    
+                    logger.info(f"Reconstructed JSON from key-value pairs: {json_obj}")
+                    extracted_fields = json_obj
+                else:
+                    # Final fallback - return error with details
+                    extracted_fields = {
+                        "error": "Failed to parse model response as JSON",
+                        "raw_response": model_output[:500] + "..." if len(model_output) > 500 else model_output,
+                        "parse_error": str(e)
+                    }
+            except Exception as final_error:
+                logger.error(f"All JSON parsing attempts failed: {final_error}")
+                extracted_fields = {
+                    "error": "Failed to parse model response as JSON",
+                    "raw_response": model_output[:500] + "..." if len(model_output) > 500 else model_output,
+                    "parse_error": str(e)
+                }
         
         # Store document info
         document_info = {

@@ -2,12 +2,15 @@ import React from 'react';
 import { X, FileText, Image, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from './Button';
 import { Badge } from './Badge';
+import { InvoiceFieldsPreview } from './InvoiceFieldsPreview';
 
 interface UploadedFilePreviewProps {
   file: File;
   ocrStatus: 'uploading' | 'processing' | 'completed' | 'error';
   ocrText?: string;
   error?: string;
+  extractedFields?: any;
+  extractionMethod?: string;
   onRemove: () => void;
 }
 
@@ -16,6 +19,8 @@ export const UploadedFilePreview: React.FC<UploadedFilePreviewProps> = ({
   ocrStatus,
   ocrText,
   error,
+  extractedFields,
+  extractionMethod,
   onRemove
 }) => {
   const formatFileSize = (bytes: number): string => {
@@ -105,6 +110,33 @@ export const UploadedFilePreview: React.FC<UploadedFilePreviewProps> = ({
                 <p className="text-xs text-gray-800 dark:text-gray-200 line-clamp-3">
                   {ocrText.length > 200 ? `${ocrText.substring(0, 200)}...` : ocrText}
                 </p>
+              </div>
+            )}
+
+            {/* Show extracted invoice fields */}
+            {ocrStatus === 'completed' && extractedFields && !extractedFields.error && (
+              <div className="mt-3">
+                <InvoiceFieldsPreview
+                  extractedFields={extractedFields}
+                  fileName={file.name}
+                  fileSize={formatFileSize(file.size)}
+                  extractionMethod={extractionMethod}
+                  hasError={false}
+                />
+              </div>
+            )}
+
+            {/* Show extraction error */}
+            {ocrStatus === 'completed' && extractedFields?.error && (
+              <div className="mt-3">
+                <InvoiceFieldsPreview
+                  extractedFields={{}}
+                  fileName={file.name}
+                  fileSize={formatFileSize(file.size)}
+                  extractionMethod={extractionMethod}
+                  hasError={true}
+                  errorMessage={extractedFields.error}
+                />
               </div>
             )}
           </div>

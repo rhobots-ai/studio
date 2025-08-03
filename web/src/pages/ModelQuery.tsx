@@ -49,6 +49,8 @@ export default function ModelQuery() {
   const [ocrText, setOcrText] = useState<string>('');
   const [fileId, setFileId] = useState<string>('');
   const [uploadError, setUploadError] = useState<string>('');
+  const [extractedFields, setExtractedFields] = useState<any>(null);
+  const [extractionMethod, setExtractionMethod] = useState<string>('');
   
   // System Prompt state
   const [systemPrompt, setSystemPrompt] = useState('');
@@ -360,6 +362,8 @@ export default function ModelQuery() {
     setUploadError('');
     setOcrText('');
     setFileId('');
+    setExtractedFields(null);
+    setExtractionMethod('');
 
     try {
       const response = await chatApi.uploadDocumentForChat(file);
@@ -368,6 +372,14 @@ export default function ModelQuery() {
         setFileId(response.fileId);
         setOcrText(response.ocrText);
         setFileUploadStatus('completed');
+        
+        // Capture extracted fields and method from the model-based response
+        if (response.extractedFields) {
+          setExtractedFields(response.extractedFields);
+        }
+        if (response.modelResponse) {
+          setExtractionMethod('trained_model');
+        }
       } else {
         setFileUploadStatus('error');
         setUploadError(response.error || 'Upload failed');
@@ -378,13 +390,14 @@ export default function ModelQuery() {
       setUploadError(error.message || 'Upload failed');
     }
   };
-
   const handleRemoveFile = () => {
     setUploadedFile(null);
     setFileUploadStatus('completed');
     setOcrText('');
     setFileId('');
     setUploadError('');
+    setExtractedFields(null);
+    setExtractionMethod('');
   };
 
   // Load available models on component mount
@@ -1138,6 +1151,8 @@ export default function ModelQuery() {
                     ocrStatus={fileUploadStatus}
                     ocrText={ocrText}
                     error={uploadError}
+                    extractedFields={extractedFields}
+                    extractionMethod={extractionMethod}
                     onRemove={handleRemoveFile}
                   />
                 )}
