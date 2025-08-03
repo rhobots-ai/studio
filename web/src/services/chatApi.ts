@@ -38,6 +38,8 @@ export interface DocumentUploadResponse {
   ocrText: string;
   message: string;
   error?: string;
+  extractedFields?: any;
+  modelResponse?: string;
 }
 
 export interface ApiError {
@@ -531,7 +533,8 @@ class ChatApiService {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`${API_BASE_URL_WITH_API}/chat/upload-document`, {
+      // Use the model-based endpoint for invoice extraction
+      const response = await fetch(`${API_BASE_URL_WITH_API}/chat/extract-invoice-with-model`, {
         method: 'POST',
         body: formData,
       });
@@ -553,7 +556,10 @@ class ChatApiService {
         fileId: data.fileId || data.file_id || '',
         ocrText: data.ocrText || data.ocr_text || '',
         message: data.message || 'Document uploaded successfully',
-        error: data.error
+        error: data.error,
+        // Include extracted fields from model-based processing
+        extractedFields: data.extractedFields || data.extracted_fields,
+        modelResponse: data.modelResponse || data.model_response
       };
     } catch (error: any) {
       console.error('Failed to upload document:', error);

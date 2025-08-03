@@ -589,16 +589,22 @@ async def extract_invoice_with_trained_model(file: UploadFile = File(...)):
         if not success:
             raise HTTPException(status_code=500, detail=f"OCR processing failed: {error_message}")
         
-        # Create the instruction-input format for your trained model
-        instruction = """You are an accountant examining invoices. you need to extract the following values from the invoice.:\\n1) invoice_number: this is the invoice number also sometimes referred to as invoice no. or invoice serial number or e-Way Bill No or bill no or PO number or purchase order number or invoice sr. no or invoice serial no or invoice serial number. if not found please keep the field null. \\n2) invoice_date: invoice_date should be formatted as python date as YYYY-MM-DD. In case of ambiguous dates please assume that day date is always written before month. If the years don't include the 21st century, please add the 21st century.\\n3) invoice_amount: this is the invoice amount. response should be in float format. \\n4) buyer_gstin: gstin of the buyer or party to which the invoice was raise. buyer_gstin is always matching the regex: \\\\d{2}[A-Z]{5}\\\\d{4}[A-Z]{1}[A-Z\\\\d]{1}Z[A-Z\\\\d]{1}\\n5) seller_gstin: gstin of the seller or party which is is raising the invoice. seller_gstin is always matching the regex: \\\\d{2}[A-Z]{5}\\\\d{4}[A-Z]{1}[A-Z\\\\d]{1}Z[A-Z\\\\d]{1}\\n\\nPlease follow the provided instructions:\\na) maintain variable names exactly as written above\\nb) return the response as a json object\\nc) return only the json object and no other text.      \\nd) provide only the json object and nothing else."""
+        # Create the instruction-input format exactly as your training data
+        instruction = "You are an accountant examining invoices. you need to extract the following values from the invoice.:\\n1) invoice_number: this is the invoice number also sometimes referred to as invoice no. or invoice serial number or e-Way Bill No or bill no or PO number or purchase order number or invoice sr. no or invoice serial no or invoice serial number. if not found please keep the field null. \\n2) invoice_date: invoice_date should be formatted as python date as YYYY-MM-DD. In case of ambiguous dates please assume that day date is always written before month. If the years don't include the 21st century, please add the 21st century.\\n3) invoice_amount: this is the invoice amount. response should be in float format. \\n4) buyer_gstin: gstin of the buyer or party to which the invoice was raise. buyer_gstin is always matching the regex: \\\\d{2}[A-Z]{5}\\\\d{4}[A-Z]{1}[A-Z\\\\d]{1}Z[A-Z\\\\d]{1}\\n5) seller_gstin: gstin of the seller or party which is is raising the invoice. seller_gstin is always matching the regex: \\\\d{2}[A-Z]{5}\\\\d{4}[A-Z]{1}[A-Z\\\\d]{1}Z[A-Z\\\\d]{1}\\n\\nPlease follow the provided instructions:\\na) maintain variable names exactly as written above\\nb) return the response as a json object\\nc) return only the json object and no other text.      \\nd) provide only the json object and nothing else."
         
         # Create the input with raw OCR text
         model_input = {
             "raw_text": extracted_text
         }
         
-        # Format the complete prompt as your model expects (instruction-input format)
-        formatted_message = f"{instruction}\n\nInput: {json.dumps(model_input)}"
+        # Format as proper JSON structure like your training data
+        training_format = {
+            "instruction": instruction,
+            "input": model_input
+        }
+        
+        # Convert to JSON string for the model
+        formatted_message = json.dumps(training_format)
         
         logger.info(f"Sending OCR text to trained model for invoice field extraction")
         
