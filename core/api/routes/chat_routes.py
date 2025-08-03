@@ -527,6 +527,164 @@ async def extract_invoice_fields_from_upload(file: UploadFile = File(...)):
         logger.error(f"Invoice field extraction failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Invoice field extraction failed: {str(e)}")
 
+@router.post("/extract-invoice-with-model")
+async def extract_invoice_with_trained_model(file: UploadFile = File(...)):
+    """
+    Upload a document and extract invoice fields using the trained model
+    This endpoint uses OCR + your trained model with the exact instruction format
+    """
+    try:
+        # Validate file type
+        allowed_types = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file.content_type}. Allowed types: PDF, JPG, PNG"
+            )
+        
+        # Check if model is loaded
+        if not model_manager.is_model_loaded():
+            raise HTTPException(status_code=400, detail="No model is currently loaded. Please load a model first.")
+        
+        # Generate unique file ID
+        file_id = str(uuid.uuid4())
+        
+        # Create temporary file
+        temp_dir = tempfile.mkdtemp()
+        file_extension = os.path.splitext(file.filename)[1].lower()
+        temp_file_path = os.path.join(temp_dir, f"{file_id}{file_extension}")
+        
+        # Save uploaded file
+        with open(temp_file_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+        
+        # Validate file
+        is_valid, validation_error = ocr_service.validate_file(temp_file_path)
+        if not is_valid:
+            # Clean up temp file
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
+            if os.path.exists(temp_dir):
+                os.rmdir(temp_dir)
+            
+            raise HTTPException(status_code=400, detail=validation_error)
+        
+        # Get file info
+        file_info = ocr_service.get_file_info(temp_file_path)
+        
+        # Extract file type for OCR
+        file_type = file_extension[1:]  # Remove the dot
+        
+        # Perform OCR to get raw text
+        logger.info(f"Starting OCR processing for file: {file.filename}")
+        success, extracted_text, error_message = ocr_service.extract_text_from_file(temp_file_path, file_type)
+        
+        # Clean up temp file
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        if os.path.exists(temp_dir):
+            os.rmdir(temp_dir)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail=f"OCR processing failed: {error_message}")
+        
+        # Create the instruction-input format for your trained model
+        instruction = """You are an accountant examining invoices. you need to extract the following values from the invoice.:\\n1) invoice_number: this is the invoice number also sometimes referred to as invoice no. or invoice serial number or e-Way Bill No or bill no or PO number or purchase order number or invoice sr. no or invoice serial no or invoice serial number. if not found please keep the field null. \\n2) invoice_date: invoice_date should be formatted as python date as YYYY-MM-DD. In case of ambiguous dates please assume that day date is always written before month. If the years don't include the 21st century, please add the 21st century.\\n3) invoice_amount: this is the invoice amount. response should be in float format. \\n4) buyer_gstin: gstin of the buyer or party to which the invoice was raise. buyer_gstin is always matching the regex: \\\\d{2}[A-Z]{5}\\\\d{4}[A-Z]{1}[A-Z\\\\d]{1}Z[A-Z\\\\d]{1}\\n5) seller_gstin: gstin of the seller or party which is is raising the invoice. seller_gstin is always matching the regex: \\\\d{2}[A-Z]{5}\\\\d{4}[A-Z]{1}[A-Z\\\\d]{1}Z[A-Z\\\\d]{1}\\n\\nPlease follow the provided instructions:\\na) maintain variable names exactly as written above\\nb) return the response as a json object\\nc) return only the json object and no other text.      \\nd) provide only the json object and nothing else."""
+        
+        # Create the input with raw OCR text
+        model_input = {
+            "raw_text": extracted_text
+        }
+        
+        # Format the complete prompt as your model expects (instruction-input format)
+        formatted_message = f"{instruction}\n\nInput: {json.dumps(model_input)}"
+        
+        logger.info(f"Sending OCR text to trained model for invoice field extraction")
+        
+        # Send to your trained model
+        model_response = await model_manager.generate_response_async(
+            message=formatted_message,
+            max_tokens=512,  # Enough for JSON response
+            temperature=0.1,  # Low temperature for consistent structured output
+            do_sample=True
+        )
+        
+        if model_response.get('status') != 'success':
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Model inference failed: {model_response.get('message', 'Unknown error')}"
+            )
+        
+        # Get the model's response
+        model_output = model_response.get('response', '')
+        
+        # Try to parse the JSON response from the model
+        try:
+            # The model should return pure JSON, but let's handle potential formatting issues
+            model_output_clean = model_output.strip()
+            
+            # Remove any potential markdown formatting
+            if model_output_clean.startswith('```json'):
+                model_output_clean = model_output_clean[7:]
+            if model_output_clean.endswith('```'):
+                model_output_clean = model_output_clean[:-3]
+            
+            model_output_clean = model_output_clean.strip()
+            
+            # Parse the JSON
+            extracted_fields = json.loads(model_output_clean)
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse model JSON response: {model_output}")
+            # Return the raw response if JSON parsing fails
+            extracted_fields = {
+                "error": "Failed to parse model response as JSON",
+                "raw_response": model_output,
+                "parse_error": str(e)
+            }
+        
+        # Store document info
+        document_info = {
+            'file_id': file_id,
+            'original_filename': file.filename,
+            'file_type': file_type,
+            'file_info': file_info,
+            'ocr_text': extracted_text,
+            'model_response': model_output,
+            'extracted_fields': extracted_fields,
+            'upload_time': datetime.now().isoformat(),
+            'content_type': file.content_type,
+            'extraction_type': 'model_based',
+            'instruction_used': instruction
+        }
+        
+        uploaded_documents[file_id] = document_info
+        
+        logger.info(f"Model-based invoice field extraction completed for file: {file.filename}")
+        
+        return {
+            'success': True,
+            'fileId': file_id,
+            'file_id': file_id,
+            'extractedFields': extracted_fields,
+            'extracted_fields': extracted_fields,
+            'modelResponse': model_output,
+            'model_response': model_output,
+            'ocrText': extracted_text,
+            'ocr_text': extracted_text,
+            'message': f'Invoice fields extracted from "{file.filename}" using trained model',
+            'file_info': file_info,
+            'text_length': len(extracted_text),
+            'extraction_method': 'trained_model'
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Model-based invoice extraction failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Model-based invoice extraction failed: {str(e)}")
+
 @router.get("/documents")
 async def list_uploaded_documents():
     """
@@ -555,6 +713,11 @@ async def list_uploaded_documents():
                               if v and k != 'raw_fields'}
             document_summary['fields_extracted'] = len([f for f in extracted_fields.values() if f is not None])
             document_summary['extracted_fields'] = extracted_fields
+        elif doc_info.get('extraction_type') == 'model_based':
+            extracted_fields = doc_info.get('extracted_fields', {})
+            document_summary['extracted_fields'] = extracted_fields
+            document_summary['extraction_method'] = 'trained_model'
+            document_summary['model_response_length'] = len(doc_info.get('model_response', ''))
         else:
             document_summary['text_length'] = len(doc_info.get('ocr_text', ''))
     
