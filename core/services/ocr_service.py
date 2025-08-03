@@ -151,7 +151,7 @@ class PaddleOCRService:
                     image.save(temp_img.name, 'PNG')
                     
                     # Extract text using PaddleOCR
-                    result = self.ocr.ocr(temp_img.name, cls=True)
+                    result = self.ocr.ocr(temp_img.name)
                     
                     # Clean up temp file
                     os.unlink(temp_img.name)
@@ -176,7 +176,7 @@ class PaddleOCRService:
         """Extract text from image file using PaddleOCR"""
         try:
             # Extract text using PaddleOCR
-            result = self.ocr.ocr(image_path, cls=True)
+            result = self.ocr.ocr(image_path)
             
             # Process OCR results
             text = self._process_ocr_result(result)
@@ -200,7 +200,7 @@ class PaddleOCRService:
                 with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_img:
                     image.save(temp_img.name, 'PNG')
                     
-                    result = self.ocr.ocr(temp_img.name, cls=True)
+                    result = self.ocr.ocr(temp_img.name)
                     os.unlink(temp_img.name)
                     
                     page_data = self._process_structured_result(result, page_number=i+1)
@@ -221,7 +221,7 @@ class PaddleOCRService:
     def _extract_structured_from_image(self, image_path: str) -> Tuple[bool, Dict[str, Any], str]:
         """Extract structured data from image file"""
         try:
-            result = self.ocr.ocr(image_path, cls=True)
+            result = self.ocr.ocr(image_path)
             structured_data = self._process_structured_result(result, page_number=1)
             
             return True, structured_data, ""
