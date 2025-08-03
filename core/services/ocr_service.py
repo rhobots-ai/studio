@@ -12,14 +12,30 @@ from pdf2image import convert_from_path
 import logging
 import json
 
-# Import PaddleOCR
+# Import PaddleOCR with headless server support
 try:
+    # Set environment variables for headless operation
+    import os
+    os.environ['DISPLAY'] = ':0'  # Set display for headless
+    
+    # Try to import OpenCV headless first
+    try:
+        import cv2
+        logger.info("OpenCV available for image processing")
+    except ImportError:
+        logger.warning("OpenCV not available, using Pillow only")
+    
     from paddleocr import PaddleOCR
     PADDLEOCR_AVAILABLE = True
+    logger.info("PaddleOCR imported successfully")
 except ImportError as e:
     PADDLEOCR_AVAILABLE = False
     PaddleOCR = None
-    logging.error(f"PaddleOCR not available: {e}. Please install: pip install paddlepaddle paddleocr")
+    logger.error(f"PaddleOCR not available: {e}. Please install: pip install paddlepaddle paddleocr")
+except Exception as e:
+    PADDLEOCR_AVAILABLE = False
+    PaddleOCR = None
+    logger.error(f"PaddleOCR initialization failed: {e}")
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +47,23 @@ class PaddleOCRService:
         
         # Initialize PaddleOCR with English language
         # use_angle_cls=True enables text angle classification for better accuracy
-        self.ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+        try:
+            # Try with show_log parameter first (newer versions)
+            self.ocr = PaddleOCR(use_angle_cls=True, lang='en', show_log=False)
+            logger.info("PaddleOCR initialized with show_log parameter")
+        except (TypeError, Exception) as e:
+            try:
+                # Fallback for older versions without show_log parameter
+                self.ocr = PaddleOCR(use_angle_cls=True, lang='en')
+                logger.info("PaddleOCR initialized without show_log parameter")
+            except Exception as e2:
+                # Final fallback - minimal parameters
+                try:
+                    self.ocr = PaddleOCR(lang='en')
+                    logger.info("PaddleOCR initialized with minimal parameters")
+                except Exception as e3:
+                    raise ImportError(f"Failed to initialize PaddleOCR: {e3}")
+        
         logger.info("PaddleOCR service initialized successfully")
     
     def extract_text_from_file(self, file_path: str, file_type: str) -> Tuple[bool, str, str]:
@@ -395,30 +427,42 @@ class PaddleOCRService:
             logger.error(f"Failed to get file info: {str(e)}")
             return {}
 
-# Create service instance with error handling
+# Create service instance with fallback handling
 try:
     ocr_service = PaddleOCRService()
     logger.info("PaddleOCR service created successfully")
 except Exception as e:
     logger.error(f"Failed to create PaddleOCR service: {e}")
-    # Create a dummy service that will raise errors when used
-    class DummyOCRService:
-        def __init__(self):
-            self.error_message = str(e)
-        
-        def extract_text_from_file(self, *args, **kwargs):
-            return False, "", f"OCR service not available: {self.error_message}"
-        
-        def extract_structured_data(self, *args, **kwargs):
-            return False, {}, f"OCR service not available: {self.error_message}"
-        
-        def extract_invoice_fields(self, *args, **kwargs):
-            return False, {}, f"OCR service not available: {self.error_message}"
-        
-        def validate_file(self, *args, **kwargs):
-            return False, f"OCR service not available: {self.error_message}"
-        
-        def get_file_info(self, *args, **kwargs):
-            return {}
+    logger.info("Attempting to use fallback Tesseract OCR service...")
     
-    ocr_service = DummyOCRService()
+    # Try to import and use the simple OCR service as fallback
+    try:
+        from .simple_ocr_service import simple_ocr_service
+        if simple_ocr_service is not None:
+            ocr_service = simple_ocr_service
+            logger.info("Using Tesseract OCR service as fallback")
+        else:
+            raise ImportError("Simple OCR service not available")
+    except Exception as e2:
+        logger.error(f"Failed to create fallback OCR service: {e2}")
+        # Create a dummy service that will raise errors when used
+        class DummyOCRService:
+            def __init__(self):
+                self.error_message = f"PaddleOCR failed: {str(e)}, Tesseract fallback failed: {str(e2)}"
+            
+            def extract_text_from_file(self, *args, **kwargs):
+                return False, "", f"OCR service not available: {self.error_message}"
+            
+            def extract_structured_data(self, *args, **kwargs):
+                return False, {}, f"OCR service not available: {self.error_message}"
+            
+            def extract_invoice_fields(self, *args, **kwargs):
+                return False, {}, f"OCR service not available: {self.error_message}"
+            
+            def validate_file(self, *args, **kwargs):
+                return False, f"OCR service not available: {self.error_message}"
+            
+            def get_file_info(self, *args, **kwargs):
+                return {}
+        
+        ocr_service = DummyOCRService()
