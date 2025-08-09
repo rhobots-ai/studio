@@ -8,6 +8,7 @@ import { chatApi, Model } from '../services/chatApi';
 import { AnimatedLoader } from '../components/ui/AnimatedLoader';
 import { FileUploadButton } from '../components/ui/FileUploadButton';
 import { UploadedFilePreview } from '../components/ui/UploadedFilePreview';
+import { FileUploadStepper, UploadStep } from '../components/ui/FileUploadStepper';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -46,6 +47,7 @@ export default function ModelQuery() {
   // File upload state
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileUploadStatus, setFileUploadStatus] = useState<'uploading' | 'processing' | 'completed' | 'error'>('completed');
+  const [uploadStep, setUploadStep] = useState<UploadStep>('ready');
   const [ocrText, setOcrText] = useState<string>('');
   const [fileId, setFileId] = useState<string>('');
   const [uploadError, setUploadError] = useState<string>('');
@@ -359,6 +361,7 @@ export default function ModelQuery() {
   const handleFileSelect = async (file: File) => {
     setUploadedFile(file);
     setFileUploadStatus('uploading');
+    setUploadStep('uploaded');
     setUploadError('');
     setOcrText('');
     setFileId('');
@@ -366,12 +369,25 @@ export default function ModelQuery() {
     setExtractionMethod('');
 
     try {
+      // Step 1: File uploaded
+      await new Promise(resolve => setTimeout(resolve, 500)); // Brief pause to show "uploaded" state
+      
+      // Step 2: Start extracting
+      setUploadStep('extracting');
+      setFileUploadStatus('processing');
+      
       const response = await chatApi.uploadDocumentForChat(file);
       
       if (response.success) {
+        // Step 3: Processing with AI
+        setUploadStep('processing');
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Show processing state
+        
+        // Step 4: Ready
         setFileId(response.fileId);
         setOcrText(response.ocrText);
         setFileUploadStatus('completed');
+        setUploadStep('ready');
         
         // Capture extracted fields and method from the model-based response
         if (response.extractedFields) {
@@ -382,17 +398,20 @@ export default function ModelQuery() {
         }
       } else {
         setFileUploadStatus('error');
+        setUploadStep('error');
         setUploadError(response.error || 'Upload failed');
       }
     } catch (error: any) {
       console.error('File upload error:', error);
       setFileUploadStatus('error');
+      setUploadStep('error');
       setUploadError(error.message || 'Upload failed');
     }
   };
   const handleRemoveFile = () => {
     setUploadedFile(null);
     setFileUploadStatus('completed');
+    setUploadStep('ready');
     setOcrText('');
     setFileId('');
     setUploadError('');
@@ -1023,7 +1042,7 @@ export default function ModelQuery() {
         </div>
         
         <div className="lg:col-span-3 h-full flex flex-col">
-          <Card className="flex-1 flex flex-col h-full min-h-[600px]">
+          <Card className="flex-1 flex flex-col h-[700px]">
             <CardHeader className="border-b flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -1045,8 +1064,8 @@ export default function ModelQuery() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto p-4 max-h-[500px] min-h-[400px]">
-              <div className="space-y-6">
+            <CardContent className="flex-1 p-4">
+              <div className="space-y-6 h-full overflow-y-auto max-h-[500px]">
                 {messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-8">
                     <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-full mb-4">
@@ -1056,40 +1075,7 @@ export default function ModelQuery() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
                       Send a message to start chatting with the selected model
                     </p>
-                    <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-2 w-full max-w-md">
-                      <Button
-                        variant="outline" 
-                        size="sm"
-                        className="justify-start text-left"
-                        onClick={() => setInputValue("What's the difference between fine-tuning and prompt engineering?")}
-                      >
-                        Explain fine-tuning vs prompt engineering
-                      </Button>
-                      <Button
-                        variant="outline" 
-                        size="sm"
-                        className="justify-start text-left"
-                        onClick={() => setInputValue("My shipment is delayed. Can you help me?")}
-                      >
-                        Help with a delayed shipment
-                      </Button>
-                      <Button
-                        variant="outline" 
-                        size="sm"
-                        className="justify-start text-left"
-                        onClick={() => setInputValue("Write a function to check order status")}
-                      >
-                        Generate a status-checking function
-                      </Button>
-                      <Button
-                        variant="outline" 
-                        size="sm"
-                        className="justify-start text-left"
-                        onClick={() => setInputValue("Summarize the key benefits of small LLMs")}
-                      >
-                        Summarize small LLM benefits
-                      </Button>
-                    </div>
+                    
                   </div>
                 ) : (
                   messages.map((message, index) => (
@@ -1144,16 +1130,16 @@ export default function ModelQuery() {
             </CardContent>
             <CardFooter className="border-t p-4">
               <div className="w-full space-y-3">
-                {/* File Upload Preview */}
+                {/* File Upload Stepper */}
                 {uploadedFile && (
-                  <UploadedFilePreview
-                    file={uploadedFile}
-                    ocrStatus={fileUploadStatus}
-                    ocrText={ocrText}
+                  <FileUploadStepper
+                    currentStep={uploadStep}
+                    fileName={uploadedFile.name}
+                    fileSize={`${(uploadedFile.size / 1024 / 1024).toFixed(1)} MB`}
                     error={uploadError}
+                    onRetry={() => handleFileSelect(uploadedFile)}
                     extractedFields={extractedFields}
-                    extractionMethod={extractionMethod}
-                    onRemove={handleRemoveFile}
+                    ocrText={ocrText}
                   />
                 )}
                 
