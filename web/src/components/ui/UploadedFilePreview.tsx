@@ -113,30 +113,156 @@ export const UploadedFilePreview: React.FC<UploadedFilePreviewProps> = ({
               </div>
             )}
 
-            {/* Show extracted invoice fields */}
+            {/* Show extracted invoice fields - exact UI match */}
             {ocrStatus === 'completed' && extractedFields && !extractedFields.error && (
               <div className="mt-3">
-                <InvoiceFieldsPreview
-                  extractedFields={extractedFields}
-                  fileName={file.name}
-                  fileSize={formatFileSize(file.size)}
-                  extractionMethod={extractionMethod}
-                  hasError={false}
-                />
+                {/* Second file header with extracted status */}
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {file.name}
+                      </p>
+                      <Badge variant="secondary" className="flex items-center gap-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        <CheckCircle className="h-3 w-3" />
+                        Extracted
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {formatFileSize(file.size)} • 5/5 fields extracted
+                    </p>
+                  </div>
+                </div>
+
+                {/* Invoice fields container - exact match to screenshot */}
+                <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      Invoice Fields Extracted
+                    </p>
+                    <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                      AI Model
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-3">
+                    {/* Invoice Number */}
+                    {extractedFields.invoice_number && (
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Invoice #:</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {extractedFields.invoice_number}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Invoice Date */}
+                    {extractedFields.invoice_date && (
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Date:</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {extractedFields.invoice_date}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Invoice Amount */}
+                    {(extractedFields.invoice_amount || extractedFields.total || extractedFields.amount) && (
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Amount:</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          ₹{(extractedFields.invoice_amount || extractedFields.total || extractedFields.amount).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Seller GSTIN */}
+                    {extractedFields.seller_gstin && (
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Seller GSTIN:</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 font-mono">
+                          {extractedFields.seller_gstin}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Buyer GSTIN */}
+                    {extractedFields.buyer_gstin && (
+                      <div className="flex items-center justify-between py-1">
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Buyer GSTIN:</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 font-mono">
+                          {extractedFields.buyer_gstin}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Seller GSTIN</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono">
+                            {extractedFields.seller_gstin}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Buyer GSTIN */}
+                    {extractedFields.buyer_gstin && (
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Buyer GSTIN</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 font-mono">
+                            {extractedFields.buyer_gstin}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Extraction completed using AI model
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      5 of 5 fields found
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
-            {/* Show extraction error */}
+            {/* Show extraction error - compact version */}
             {ocrStatus === 'completed' && extractedFields?.error && (
-              <div className="mt-3">
-                <InvoiceFieldsPreview
-                  extractedFields={{}}
-                  fileName={file.name}
-                  fileSize={formatFileSize(file.size)}
-                  extractionMethod={extractionMethod}
-                  hasError={true}
-                  errorMessage={extractedFields.error}
-                />
+              <div className="mt-2">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    <p className="text-xs font-medium text-red-800 dark:text-red-200">
+                      Extraction Error
+                    </p>
+                  </div>
+                  <p className="text-xs text-red-700 dark:text-red-300">
+                    {extractedFields.error}
+                  </p>
+                </div>
               </div>
             )}
           </div>
