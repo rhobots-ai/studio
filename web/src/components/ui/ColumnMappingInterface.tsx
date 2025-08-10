@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './Button';
+import { fileService } from '../../services/fileService';
 import { Card, CardHeader, CardTitle, CardContent } from './Card';
 import { 
   ArrowRight, 
@@ -107,24 +108,7 @@ export const ColumnMappingInterface: React.FC<ColumnMappingInterfaceProps> = ({
     try {
       setIsLoadingPreview(true);
       setError(null);
-      
-      const response = await fetch(`/api/files/${fileId}/preview-mapped`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file_id: fileId,
-          column_mapping: mapping,
-          limit: 5
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
+      const result = await fileService.previewMappedData(fileId, mapping, 5);
       setPreviewData(result.preview_data || []);
       
     } catch (err: any) {
@@ -138,22 +122,7 @@ export const ColumnMappingInterface: React.FC<ColumnMappingInterfaceProps> = ({
 
   const validateMapping = async () => {
     try {
-      const response = await fetch(`/api/files/${fileId}/validate-mapping`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file_id: fileId,
-          column_mapping: mapping
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
+      const result = await fileService.validateMapping(fileId, mapping);
       setValidationResult(result.validation);
       return result.validation.is_valid;
       
