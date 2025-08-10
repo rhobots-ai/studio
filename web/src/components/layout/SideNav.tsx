@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Layers, MessageSquare, Settings, Menu, X, Brain, ChevronDown, LineChart, Activity, BarChart3, Database, Target, Rocket } from 'lucide-react';
+import { Home, MessageSquare, Settings, Menu, X, Brain, ChevronDown, LineChart, Activity, Database, Rocket } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -84,8 +84,8 @@ export function SideNav() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -100, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className={cn(
-              "bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700",
+              className={cn(
+               "bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800",
               "w-60 shrink-0 overflow-y-auto",
               "fixed md:sticky top-0 bottom-0 left-0 z-10 md:z-0",
               isOpen ? "block" : "hidden md:block",
@@ -121,12 +121,12 @@ export function SideNav() {
                             navigate(item.path);
                           }
                         }}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group",
-                          (isActive || isSubItemActive)
-                            ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 shadow-sm"
-                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-gray-200"
-                        )}
+                         className={cn(
+                           "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer group",
+                           (isActive || isSubItemActive)
+                             ? "bg-primary-50 dark:bg-gray-800 text-primary-600 dark:text-gray-100 shadow-sm"
+                             : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                         )}
                       >
                         <Icon className={cn(
                           "h-5 w-5 transition-colors",
@@ -152,7 +152,7 @@ export function SideNav() {
                           exit={{ opacity: 0, height: 0 }}
                           className="ml-4 mt-1 space-y-1"
                         >
-                          {item.subItems.map((subItem, index) => {
+                          {item.subItems.map((subItem) => {
                             const isSubActive = pathname === subItem.path;
                             return (
                               <Link

@@ -25,9 +25,9 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   }, ref) => {
     const variants = {
       primary: 'bg-primary-600 hover:bg-primary-700 text-white shadow-sm',
-      secondary: 'bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 shadow-sm',
-      outline: 'border border-gray-200 hover:bg-gray-50 text-gray-700',
-      ghost: 'text-gray-700 hover:bg-gray-100',
+      secondary: 'bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-800 shadow-sm',
+      outline: 'border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-900 text-gray-700 dark:text-gray-200',
+      ghost: 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900',
     };
 
     const sizes = {
@@ -42,7 +42,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={isLoading || disabled}
         className={cn(
           'inline-flex items-center justify-center font-medium rounded-md transition-colors',
-          'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+          'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900',
           variants[variant],
           sizes[size],
           isLoading && 'opacity-80 cursor-not-allowed',

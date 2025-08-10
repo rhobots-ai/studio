@@ -199,7 +199,7 @@ export const UploadData: React.FC = () => {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Training Data Upload</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Training Data Upload</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
           We support JSON, CSV, Excel, Pickle, and text files containing instruction-response pairs for fine-tuning
         </p>
@@ -208,7 +208,7 @@ export const UploadData: React.FC = () => {
       {/* Upload Section */}
       <Card>
         <CardHeader>
-          <CardTitle>Training Data Files</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-gray-100">Training Data Files</CardTitle>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             Upload JSON, CSV, Excel, Pickle, or text files containing instruction-response pairs
           </p>
@@ -276,7 +276,7 @@ export const UploadData: React.FC = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Or Select from Dataset Library</h2>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Or Select from Dataset Library</h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Choose from your previously prepared and validated datasets
             </p>
@@ -298,7 +298,7 @@ export const UploadData: React.FC = () => {
             placeholder="Search datasets..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
           />
         </div>
 
@@ -335,10 +335,10 @@ export const UploadData: React.FC = () => {
             {filteredDatasets.map(dataset => (
               <div
                 key={dataset.dataset_id}
-                className={`cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border-2 bg-white ${
+                className={`cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border bg-white dark:bg-gray-900 ${
                   selectedDataset?.dataset_id === dataset.dataset_id 
-                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-                    : 'border-gray-200 dark:border-gray-700 hover:border-blue-300'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-gray-800' 
+                    : 'border-gray-200 dark:border-gray-800 hover:border-blue-300 dark:hover:border-gray-700'
                 }`}
                 onClick={() => handleDatasetSelect(dataset)}
               >
@@ -353,7 +353,7 @@ export const UploadData: React.FC = () => {
                           e.stopPropagation();
                           // TODO: Add preview functionality
                         }}
-                        className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
                       >
                         <Eye className="h-4 w-4 text-gray-500" />
                       </button>

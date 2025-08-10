@@ -10,5 +10,10 @@
   body {
     font-size: 0.875rem; /* 14px equivalent */
     line-height: 1.5;
+    @apply text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-950;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-gray-900 dark:text-gray-100;
   }
 }

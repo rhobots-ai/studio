@@ -205,7 +205,7 @@ export const DataPreparation: React.FC = () => {
   };
 
   const DatasetCard: React.FC<{ dataset: ProcessedDataset }> = ({ dataset }) => (
-    <div className="cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 bg-white">
+    <div className="cursor-pointer transition-all duration-200 hover:shadow-md p-4 rounded-lg border border-gray-200 dark:border-gray-800 hover:border-primary-400 dark:hover:border-gray-700 bg-white dark:bg-gray-900">
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
@@ -218,25 +218,25 @@ export const DataPreparation: React.FC = () => {
                   setPreviewDataset(dataset);
                   setCurrentView('preview');
                 }}
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <Eye className="h-4 w-4 text-gray-500" />
               </button>
               <button
                 onClick={() => handleDownloadDataset(dataset.dataset_id)}
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <Download className="h-4 w-4 text-gray-500" />
               </button>
               <button
                 onClick={() => handleDuplicateDataset(dataset)}
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
               >
                 <Copy className="h-4 w-4 text-gray-500" />
               </button>
               <button
                 onClick={() => handleDeleteDataset(dataset.dataset_id)}
-                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 text-red-600 hover:text-red-700"
+                className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-red-600 hover:text-red-500"
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -341,7 +341,7 @@ export const DataPreparation: React.FC = () => {
                   placeholder="Search datasets..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
@@ -350,7 +350,7 @@ export const DataPreparation: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
               >
                 <option value="created_at">Created Date</option>
                 <option value="name">Name</option>

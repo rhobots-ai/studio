@@ -9,12 +9,12 @@ import { ThemeProvider } from './components/theme/ThemeProvider';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="light">
         <App />
         <Toaster
           position="bottom-right"
           toastOptions={{
-            className: 'bg-white dark:bg-gray-800 dark:text-white',
+            className: 'bg-white dark:bg-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-800',
             duration: 4000,
             style: {
               borderRadius: '8px',
