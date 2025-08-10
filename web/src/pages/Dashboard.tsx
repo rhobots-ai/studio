@@ -225,7 +225,7 @@ export default function Dashboard() {
     <div className="space-y-8 p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Training Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Training Dashboard</h1>
           <p className="text-gray-500 dark:text-gray-400 mt-1">
             Monitor and manage your training sessions
           </p>
@@ -249,14 +249,14 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: index * 0.1 }}
           >
-            <Card variant="outline" className="hover:border-gray-300 dark:hover:border-gray-600 transition-colors">
+            <Card variant="outline" className="hover:border-gray-300 dark:hover:border-gray-700 transition-colors">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
                       {item.title}
                     </p>
-                    <h3 className="text-2xl font-bold mt-1">
+                    <h3 className="text-2xl font-bold mt-1 text-gray-900 dark:text-gray-100">
                       {isLoading ? (
                         <AnimatedLoader variant="pulse" size="sm" />
                       ) : (

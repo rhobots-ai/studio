@@ -8,8 +8,30 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      // Apply saved theme before React mounts to avoid flash (default to light)
+      (function() {
+        try {
+          var storageKey = 'ui-theme';
+          var storedTheme = localStorage.getItem(storageKey);
+          var root = document.documentElement;
+          root.classList.remove('light', 'dark');
+          if (storedTheme === 'dark') {
+            root.classList.add('dark');
+          } else if (storedTheme === 'light') {
+            root.classList.add('light');
+          } else if (storedTheme === 'system') {
+            var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            root.classList.add(prefersDark ? 'dark' : 'light');
+          } else {
+            // No preference stored: default to light
+            root.classList.add('light');
+          }
+        } catch (e) { /* no-op */ }
+      })();
+    </script>
   </head>
-  <body class="antialiased bg-gray-50 dark:bg-gray-900">
+  <body class="antialiased bg-gray-50 dark:bg-gray-950">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

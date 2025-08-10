@@ -159,7 +159,7 @@ export default function UploadData() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Upload Training Data</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">Upload Training Data</h1>
         <p className="text-gray-500 dark:text-gray-400 mt-1">
           Provide data to fine-tune your model with
         </p>
@@ -169,7 +169,7 @@ export default function UploadData() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Training Data Files</CardTitle>
+              <CardTitle className="text-gray-900 dark:text-gray-100">Training Data Files</CardTitle>
               <CardDescription>
                 Upload JSON, CSV, or text files containing instruction-response pairs
               </CardDescription>
@@ -179,8 +179,8 @@ export default function UploadData() {
                 {...getRootProps()} 
                 className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
                   isDragActive 
-                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/10' 
-                    : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
+                    ? 'border-primary-500 bg-primary-50 dark:bg-gray-900' 
+                    : 'border-gray-300 dark:border-gray-800 hover:border-gray-400 dark:hover:border-gray-700'
                 }`}
               >
                 <input {...getInputProps()} />
@@ -189,7 +189,7 @@ export default function UploadData() {
                     <Upload className="h-6 w-6 text-primary-600 dark:text-primary-400" />
                   </div>
                   <div className="space-y-1">
-                    <p className="text-sm font-medium">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {isDragActive ? 'Drop the files here' : 'Drag & drop files here or click to browse'}
                     </p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -202,13 +202,13 @@ export default function UploadData() {
               {files.length > 0 && (
                 <div className="mt-6">
                   <h4 className="text-sm font-medium mb-3">Uploaded Files</h4>
-                  <ul className="space-y-3">
+                   <ul className="space-y-3">
                     {files.map((file) => (
                       <motion.li 
                         key={file.name}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-md"
+                         className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-800"
                       >
                         <div className="flex items-center">
                           <FileText className="h-5 w-5 mr-3 text-gray-500" />
