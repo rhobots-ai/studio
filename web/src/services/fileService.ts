@@ -157,6 +157,32 @@ export interface ProcessedFileResponse {
 class FileService {
   private baseUrl = `${API_BASE_URL_WITH_API}/files`;
 
+  private async parseJsonSafe<T = any>(response: Response): Promise<T> {
+    try {
+      return (await response.json()) as T;
+    } catch (err) {
+      const text = await response.text();
+      // Surface a clearer error when HTML (e.g., index.html or proxy error) is returned
+      const contentType = response.headers.get('content-type') || 'unknown';
+      const snippet = text.slice(0, 200).replace(/\s+/g, ' ').trim();
+      throw new Error(
+        `Expected JSON but received ${contentType} (status ${response.status}). ` +
+        `Response starts with: ${snippet}`
+      );
+    }
+  }
+
+  private async throwDetailedError(response: Response): Promise<never> {
+    try {
+      const error = await response.json();
+      const detail = (error && (error.detail || error.message)) || JSON.stringify(error);
+      throw new Error(`Request failed (${response.status}): ${detail}`);
+    } catch {
+      const text = await response.text();
+      throw new Error(`Request failed (${response.status}). Body: ${text.slice(0, 300)}`);
+    }
+  }
+
   /**
    * Upload a file using multipart form data
    */
@@ -241,13 +267,8 @@ class FileService {
    */
   async getColumnInfo(fileId: string): Promise<ColumnInfoResponse> {
     const response = await fetch(`${this.baseUrl}/${fileId}/column-info`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to get column info');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -268,13 +289,8 @@ class FileService {
         column_mapping: columnMapping,
       }),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to validate mapping');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -296,13 +312,8 @@ class FileService {
         column_mapping: columnMapping,
       }),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to save column mapping');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -320,13 +331,8 @@ class FileService {
         limit,
       }),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to preview mapped data');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -343,13 +349,8 @@ class FileService {
         column_mapping: columnMapping,
       }),
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to process file');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -362,13 +363,8 @@ class FileService {
     has_mapping: boolean;
   }> {
     const response = await fetch(`${this.baseUrl}/${fileId}/mapping`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to get file mapping');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -382,13 +378,8 @@ class FileService {
     const response = await fetch(`${this.baseUrl}/${fileId}/mapping`, {
       method: 'DELETE',
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to remove file mapping');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -409,13 +400,8 @@ class FileService {
     }
 
     const response = await fetch(`${this.baseUrl}?${params}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to list files');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -423,13 +409,8 @@ class FileService {
    */
   async getFileInfo(fileId: string): Promise<{ success: boolean; file_info: FileMetadata }> {
     const response = await fetch(`${this.baseUrl}/${fileId}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to get file info');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -437,13 +418,8 @@ class FileService {
    */
   async getFilePreview(fileId: string, limit: number = 10): Promise<FilePreviewResponse> {
     const response = await fetch(`${this.baseUrl}/${fileId}/preview?limit=${limit}`);
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to get file preview');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
@@ -453,13 +429,8 @@ class FileService {
     const response = await fetch(`${this.baseUrl}/${fileId}`, {
       method: 'DELETE',
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to delete file');
-    }
-
-    return response.json();
+    if (!response.ok) return this.throwDetailedError(response);
+    return this.parseJsonSafe(response);
   }
 
   /**
